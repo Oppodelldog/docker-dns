@@ -13,11 +13,16 @@ import (
 func main() {
 	helper.PrintIps()
 
+	dnsRegistry := dnsserver.NewDNSRegistry()
+
 	ctx := getContextCanceledByInterrupt()
 
-	dnsserver.StartDockerDNSSurvey(ctx)
-	dnsserver.StartAliasLoader(ctx)
-	dnsserver.Run(ctx)
+	runningContainersGetter := dnsserver.RunningContainersGetterFunc(dnsserver.GetRunningContainers)
+
+	dnsserver.StartAliasLoader(ctx, dnsRegistry)
+	dnsserver.NewContainerDNSSurvey(dnsRegistry, runningContainersGetter).Run()
+	dnsserver.NewDNSUpdater().Start(ctx, dnsRegistry)
+	dnsserver.Run(ctx, dnsRegistry)
 }
 
 func getContextCanceledByInterrupt() context.Context {

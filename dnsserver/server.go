@@ -11,10 +11,10 @@ import (
 
 const dnsPort = 53
 
-// Run starts the DNS server.
-func Run(ctx context.Context) {
+// Run starts the DNS server which will answer requests using the given IPResolver
+func Run(ctx context.Context, ipResolver IPResolver) {
 
-	s := spawnServer()
+	s := spawnServer(ipResolver)
 
 	<-ctx.Done()
 
@@ -29,10 +29,10 @@ func stopServer(s *dns.Server) {
 	}
 }
 
-func spawnServer() *dns.Server {
+func spawnServer(ipResolver IPResolver) *dns.Server {
 	fmt.Printf("starting dns server (udp) on :%v\n", dnsPort)
 	srv := &dns.Server{Addr: ":" + strconv.Itoa(dnsPort), Net: "udp"}
-	srv.Handler = dns.HandlerFunc(ServeDNS)
+	srv.Handler = NewDNSHandler(ipResolver)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

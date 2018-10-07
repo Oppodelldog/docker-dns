@@ -1,27 +1,7 @@
 version: '3.0'
 services:
 
-  dns-lookup:
-    command: go run dnslookup/main.go
-    image: golang:1.11.0
-    volumes:
-    - ./:/go/src/github.com/Oppodelldog/docker-dns
-    working_dir: /go/src/github.com/Oppodelldog/docker-dns
-    dns:
-    - 172.16.0.3
-    networks:
-      - app_net
-
-  pong:
-    command: go run pong/main.go
-    image: golang:1.11.0
-    volumes:
-    - ./:/go/src/github.com/Oppodelldog/docker-dns
-    working_dir: /go/src/github.com/Oppodelldog/docker-dns
-    networks:
-      - app_net
-
-  dumb-dns:
+  dnsserver:
     command: go run cmd/main.go
     image: golang:1.11.0
     volumes:
@@ -32,6 +12,25 @@ services:
       app_net:
         ipv4_address:  172.16.0.3
 
+  dnstester:
+    command: go run dnslookup/main.go
+    image: golang:1.11.0
+    volumes:
+    - ./:/go/src/github.com/Oppodelldog/docker-dns
+    working_dir: /go/src/github.com/Oppodelldog/docker-dns
+    dns:
+    - 172.16.0.3
+    networks:
+    - app_net
+
+  pong:
+    command: go run pong/main.go
+    image: golang:1.11.0
+    volumes:
+    - ./:/go/src/github.com/Oppodelldog/docker-dns
+    working_dir: /go/src/github.com/Oppodelldog/docker-dns
+    networks:
+    - app_net
 
 networks:
   app_net:

@@ -8,6 +8,12 @@
   version = "v0.4.11"
 
 [[projects]]
+  name = "github.com/Sirupsen/logrus"
+  packages = ["."]
+  revision = "a67f783a3814b8729bd2dac5780b5f78f8dbd64d"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/docker/distribution"
   packages = [
     "digest",
@@ -56,6 +62,12 @@
   version = "v0.3.3"
 
 [[projects]]
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/miekg/dns"
   packages = ["."]
   revision = "426ea785a99b1dad4755492b923feb327d9251a6"
@@ -72,7 +84,8 @@
   name = "golang.org/x/crypto"
   packages = [
     "ed25519",
-    "ed25519/internal/edwards25519"
+    "ed25519/internal/edwards25519",
+    "ssh/terminal"
   ]
   revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
@@ -104,6 +117,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6d15547f08e1d372808331a35efa1e75943541b059775a4da410180adfe338b4"
+  inputs-digest = "a3944a62744edcf9815cad825da3be4db7b1790c38202b059e842776bcc75aeb"
   solver-name = "gps-cdcl"
   solver-version = 1

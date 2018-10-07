@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"strings"
 	"sync"
@@ -16,50 +17,40 @@ import (
 const aliasLoaderDefaultInterval = 10 * time.Second
 const aliasFileDefaultPath = "data/alias"
 
-var aliases = map[string]string{}
-var ipAddressByContainerName = map[string]string{}
-var lock sync.Mutex
+//StartAliasLoader starts frequently loading on the given AliasStorage
+func StartAliasLoader(ctx context.Context, aliasFileLoader AliasFileLoader) {
+	logrus.Info("Starting Alias loader")
 
-//StartAliasLoader starts frequently loading of the alias file
-func StartAliasLoader(ctx context.Context) {
 	go func() {
-		loadAliases()
+		aliasFileLoader.LoadAliasesFromFile()
 		ticker := time.NewTicker(aliasLoaderDefaultInterval)
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("Stopping Alias loader")
+				logrus.Info("Stopping Alias loader")
 				return
 			case <-ticker.C:
-				loadAliases()
+				aliasFileLoader.LoadAliasesFromFile()
 			}
 		}
 	}()
 }
 
-func getIPFromDomain(domain string) (string, bool) {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if alias, ok := aliases[domain]; ok {
-		domain = alias
+func NewDNSRegistry() DNSRegistry {
+	return &dnsRegistry{
+		aliases:                  map[string]string{},
+		ipAddressByContainerName: map[string]string{},
+		lock: sync.Mutex{},
 	}
-
-	if val, ok := ipAddressByContainerName[domain]; ok {
-		return val, ok
-	}
-
-	return "", false
 }
 
-func updateIPContainerNameMappings(m map[string]string) {
-	lock.Lock()
-	defer lock.Unlock()
-
-	ipAddressByContainerName = m
+type dnsRegistry struct {
+	aliases                  map[string]string
+	ipAddressByContainerName map[string]string
+	lock                     sync.Mutex
 }
 
-func loadAliases() {
+func (s *dnsRegistry) LoadAliasesFromFile() {
 	fmt.Println("Loading Alias file")
 	content, err := ioutil.ReadFile(aliasFileDefaultPath)
 	if err != nil {
@@ -75,21 +66,57 @@ func loadAliases() {
 			if strings.Contains(fields[0], "#") {
 				continue
 			}
-			newAliases[makeDNSDomain(fields)] = fields[1]
+			newAliases[s.makeDNSDomain(fields)] = fields[1]
 		}
 	}
 
 	numberOfAliases := len(newAliases)
 
 	if numberOfAliases > 0 {
-		lock.Lock()
-		defer lock.Unlock()
+		s.lock.Lock()
+		defer s.lock.Unlock()
 
-		aliases = newAliases
-		helper.PrintStringMap(aliases)
+		s.aliases = newAliases
+		helper.PrintStringMap(s.aliases)
 	}
 }
 
-func makeDNSDomain(fields []string) string {
+func (s *dnsRegistry) makeDNSDomain(fields []string) string {
 	return fmt.Sprintf("%s.", fields[0])
+}
+
+func (s *dnsRegistry) GetIPFromDomain(domain string) (string, bool) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if alias, ok := s.aliases[domain]; ok {
+		domain = alias
+	}
+
+	if val, ok := s.ipAddressByContainerName[domain]; ok {
+		return val, ok
+	}
+
+	return "", false
+}
+
+func (s *dnsRegistry) updateIPContainerNameMappings(m map[string]string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.ipAddressByContainerName = m
+}
+
+func (s *dnsRegistry) Unregister(containerName string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	delete(s.ipAddressByContainerName, containerName)
+}
+
+func (s *dnsRegistry) Register(containerName string, ip string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.ipAddressByContainerName[containerName] = ip
 }
