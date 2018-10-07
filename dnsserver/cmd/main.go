@@ -2,27 +2,41 @@ package main
 
 import (
 	"context"
+	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/client"
+
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/Oppodelldog/docker-dns/dnsserver"
-	"github.com/Oppodelldog/docker-dns/helper"
 )
 
 func main() {
-	helper.PrintIps()
-
-	dnsRegistry := dnsserver.NewDNSRegistry()
-
 	ctx := getContextCanceledByInterrupt()
 
-	runningContainersGetter := dnsserver.RunningContainersGetterFunc(dnsserver.GetRunningContainers)
+	dockerClient, dockerClientDefer := getDockerClient()
+	defer dockerClientDefer()
 
-	dnsserver.StartAliasLoader(ctx, dnsRegistry)
-	dnsserver.NewContainerDNSSurvey(dnsRegistry, runningContainersGetter).Run()
-	dnsserver.NewDNSUpdater().Start(ctx, dnsRegistry)
+	aliasProvider := dnsserver.NewAliasFileLoader(ctx)
+	dnsRegistry := dnsserver.NewDNSRegistry(aliasProvider)
+
+	dockerClientAdapter := dnsserver.NewDockerClientAdapter(dockerClient)
+
+	dnsserver.NewContainerDNSSurvey(dnsRegistry, dockerClientAdapter, dockerClientAdapter).Run()
+	dnsserver.NewDNSUpdater(ctx, dockerClient, dockerClientAdapter, dnsRegistry)
 	dnsserver.Run(ctx, dnsRegistry)
+}
+
+func getDockerClient() (*client.Client, func()) {
+	dockerClient, err := client.NewEnvClient()
+
+	return dockerClient, func() {
+		err = dockerClient.Close()
+		if err != nil {
+			logrus.Errorf("error closing docker dockerClient: %v", err)
+		}
+	}
 }
 
 func getContextCanceledByInterrupt() context.Context {

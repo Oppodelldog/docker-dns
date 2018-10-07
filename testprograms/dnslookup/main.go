@@ -36,7 +36,7 @@ func lookup(host string) {
 	wg.Add(1)
 	ips, err := net.LookupIP(host)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not get IPs: %v\n", err)
+		fmt.Fprintf(os.Stderr, "DNS Lookup failed: %v\n", err)
 	}
 	for _, ip := range ips {
 		fmt.Printf("%s. IN A %s\n", host, ip.String())

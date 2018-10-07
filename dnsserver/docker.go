@@ -2,40 +2,36 @@ package dnsserver
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/Oppodelldog/docker-dns/helper"
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
-type RunningContainersGetter interface {
-	GetRunningContainers() ([]types.Container, error)
-}
-
-type RunningContainersGetterFunc func() ([]types.Container, error)
-
-func (f RunningContainersGetterFunc) GetRunningContainers() ([]types.Container, error) {
-	return f()
-}
-
-type NetworkIDsGetter interface {
-	GetNetworkIDs() ([]string, error)
-}
-
-func GetRunningContainers() ([]types.Container, error) {
-	dockerClient, err := client.NewEnvClient()
-	if err != nil {
-		return nil, err
+type (
+	RunningContainersGetter interface {
+		GetRunningContainers() ([]types.Container, error)
 	}
-	defer func() {
-		err = dockerClient.Close()
-		if err != nil {
-			fmt.Printf("error cloding docker dockerClient: %v", err)
-		}
-	}()
+	NetworkIDsGetter interface {
+		GetNetworkIDs() ([]string, error)
+	}
+	NetworkIPsGetter interface {
+		GetContainerNetworkIps(container types.Container) []string
+	}
+	dockerClientAdapter struct {
+		dockerClient *client.Client
+	}
+)
 
-	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{})
+func NewDockerClientAdapter(dockerClient *client.Client) *dockerClientAdapter {
+	return &dockerClientAdapter{
+		dockerClient: dockerClient,
+	}
+}
+
+func (a *dockerClientAdapter) GetRunningContainers() ([]types.Container, error) {
+	containers, err := a.dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
@@ -43,14 +39,14 @@ func GetRunningContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func getNetworkIDs() ([]string, error) {
+func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
 
 	var networkIDs []string
 	myIps, err := helper.GetIps()
 	if err != nil {
 		return nil, err
 	}
-	containers, err := GetRunningContainers()
+	containers, err := a.GetRunningContainers()
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +64,9 @@ func getNetworkIDs() ([]string, error) {
 	return networkIDs, nil
 }
 
-func GetContainerNetworkIps(container types.Container) []string {
+func (a *dockerClientAdapter) GetContainerNetworkIps(container types.Container) []string {
 	var ips []string
-	networkIDs, err := getNetworkIDs()
+	networkIDs, err := a.getNetworkIDs()
 	if err != nil {
 		logrus.Errorf("error retrieving all NetworkIDs: %v", err)
 

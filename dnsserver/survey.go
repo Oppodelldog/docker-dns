@@ -1,18 +1,16 @@
 package dnsserver
 
-import (
-	"fmt"
-	"strings"
-)
-
 type ContainerDNSSurvey struct {
 	dnsRegisterer          DNSRegisterer
 	runningContainerGetter RunningContainersGetter
+	networkIPsGetter       NetworkIPsGetter
 }
 
 func NewContainerDNSSurvey(dnsRegisterer DNSRegisterer,
-	runningContainerGetter RunningContainersGetter) *ContainerDNSSurvey {
+	runningContainerGetter RunningContainersGetter,
+	networkIPsGetter NetworkIPsGetter) *ContainerDNSSurvey {
 	return &ContainerDNSSurvey{
+		networkIPsGetter:       networkIPsGetter,
 		dnsRegisterer:          dnsRegisterer,
 		runningContainerGetter: runningContainerGetter,
 	}
@@ -25,22 +23,10 @@ func (s *ContainerDNSSurvey) Run() {
 	}
 
 	for _, container := range containers {
-		ips := GetContainerNetworkIps(container)
+		ips := s.networkIPsGetter.GetContainerNetworkIps(container)
 		for _, containerName := range container.Names {
 			ip := ips[len(ips)-1]
-			//TODO: why is docker-compose name necessary here? this service should work for docker also
-			dockerComposeContainerName := s.getDockerComposeName(containerName)
-			s.dnsRegisterer.Register(dockerComposeContainerName, ip)
+			s.dnsRegisterer.Register(containerName, ip)
 		}
 	}
-}
-
-func (s *ContainerDNSSurvey) getDockerComposeName(containerName string) string {
-	parts := strings.Split(containerName, "_")
-	if len(parts) < 2 {
-		fmt.Println("could not convert to docker-compose name")
-		return containerName
-	}
-
-	return parts[1]
 }

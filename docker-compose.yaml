@@ -13,7 +13,7 @@ services:
         ipv4_address:  172.16.0.3
 
   dnstester:
-    command: go run dnslookup/main.go
+    command: go run testprograms/dnslookup/main.go
     image: golang:1.11.0
     volumes:
     - ./:/go/src/github.com/Oppodelldog/docker-dns
@@ -24,7 +24,7 @@ services:
     - app_net
 
   pong:
-    command: go run pong/main.go
+    command: go run testprograms/pong/main.go
     image: golang:1.11.0
     volumes:
     - ./:/go/src/github.com/Oppodelldog/docker-dns
