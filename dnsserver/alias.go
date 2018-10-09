@@ -4,13 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/Oppodelldog/docker-dns/helper"
 	"github.com/Sirupsen/logrus"
 )
 
@@ -67,7 +65,7 @@ func (l *aliasFileLoader) loadAliasesFromFile() {
 			if strings.Contains(fields[0], "#") {
 				continue
 			}
-			newAliases[l.makeDNSDomain(fields)] = fields[1]
+			newAliases[fields[0]] = fields[1]
 		}
 	}
 
@@ -75,10 +73,8 @@ func (l *aliasFileLoader) loadAliasesFromFile() {
 
 	if numberOfAliases > 0 {
 		l.lock.Lock()
-		defer l.lock.Unlock()
-
 		l.aliases = newAliases
-		helper.PrintStringMap(l.aliases)
+		l.lock.Unlock()
 	}
 }
 
@@ -88,8 +84,4 @@ func (l *aliasFileLoader) GetAliasForDomain(domain string) (string, bool) {
 	}
 
 	return "", false
-}
-
-func (l *aliasFileLoader) makeDNSDomain(fields []string) string {
-	return fmt.Sprintf("%s.", fields[0])
 }

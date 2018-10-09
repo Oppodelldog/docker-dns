@@ -15,10 +15,10 @@ type DNSUpdater struct {
 	dockerClientAdapter *dockerClientAdapter
 	dockerClient        *client.Client
 	ctx                 context.Context
-	dnsRegistry         DNSRegistry
+	dnsRegistry         DNSRegistrar
 }
 
-func NewDNSUpdater(ctx context.Context, dockerClient *client.Client, dockerClientAdapter *dockerClientAdapter, dnsRegistry DNSRegistry) *DNSUpdater {
+func NewDNSUpdater(ctx context.Context, dockerClient *client.Client, dockerClientAdapter *dockerClientAdapter, dnsRegistry DNSRegistrar) *DNSUpdater {
 	u := &DNSUpdater{
 		dockerClientAdapter: dockerClientAdapter,
 		dockerClient:        dockerClient,

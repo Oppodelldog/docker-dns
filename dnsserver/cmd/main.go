@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
-	"github.com/docker/docker/client"
-
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/client"
 
 	"github.com/Oppodelldog/docker-dns/dnsserver"
 )
@@ -18,13 +18,15 @@ func main() {
 	dockerClient, dockerClientDefer := getDockerClient()
 	defer dockerClientDefer()
 
+	dockerClientAdapter := dnsserver.NewDockerClientAdapter(dockerClient)
+
 	aliasProvider := dnsserver.NewAliasFileLoader(ctx)
 	dnsRegistry := dnsserver.NewDNSRegistry(aliasProvider)
 
-	dockerClientAdapter := dnsserver.NewDockerClientAdapter(dockerClient)
+	containerRegisterer := dnsserver.NewContainerRegistry(dnsRegistry)
 
-	dnsserver.NewContainerDNSSurvey(dnsRegistry, dockerClientAdapter, dockerClientAdapter).Run()
-	dnsserver.NewDNSUpdater(ctx, dockerClient, dockerClientAdapter, dnsRegistry)
+	dnsserver.NewContainerDNSSurvey(containerRegisterer, dockerClientAdapter, dockerClientAdapter).Run()
+	dnsserver.NewDNSUpdater(ctx, dockerClient, dockerClientAdapter, containerRegisterer)
 	dnsserver.Run(ctx, dnsRegistry)
 }
 

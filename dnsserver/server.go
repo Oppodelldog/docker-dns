@@ -2,10 +2,11 @@ package dnsserver
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
 	"net"
 	"os"
 	"strconv"
+
+	"github.com/Sirupsen/logrus"
 
 	"github.com/miekg/dns"
 )

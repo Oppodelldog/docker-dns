@@ -5,7 +5,7 @@ services:
     command: go run cmd/main.go
     image: golang:1.11.0
     volumes:
-    - ./:/go/src/github.com/Oppodelldog/docker-dns
+    - ../:/go/src/github.com/Oppodelldog/docker-dns
     - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /go/src/github.com/Oppodelldog/docker-dns/dnsserver
     networks:
@@ -13,10 +13,10 @@ services:
         ipv4_address:  172.16.0.3
 
   dnstester:
-    command: go run testprograms/dnslookup/main.go
+    command: go run test/dnslookup/main.go
     image: golang:1.11.0
     volumes:
-    - ./:/go/src/github.com/Oppodelldog/docker-dns
+    - ../:/go/src/github.com/Oppodelldog/docker-dns
     working_dir: /go/src/github.com/Oppodelldog/docker-dns
     dns:
     - 172.16.0.3
@@ -24,10 +24,10 @@ services:
     - app_net
 
   pong:
-    command: go run testprograms/pong/main.go
+    command: go run test/pong/main.go
     image: golang:1.11.0
     volumes:
-    - ./:/go/src/github.com/Oppodelldog/docker-dns
+    - ../:/go/src/github.com/Oppodelldog/docker-dns
     working_dir: /go/src/github.com/Oppodelldog/docker-dns
     networks:
     - app_net

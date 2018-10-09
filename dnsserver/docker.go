@@ -3,7 +3,7 @@ package dnsserver
 import (
 	"context"
 
-	"github.com/Oppodelldog/docker-dns/helper"
+	"github.com/Oppodelldog/docker-dns/network"
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -42,7 +42,7 @@ func (a *dockerClientAdapter) GetRunningContainers() ([]types.Container, error) 
 func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
 
 	var networkIDs []string
-	myIps, err := helper.GetIps()
+	myIps, err := network.GetIps()
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +52,10 @@ func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
 	}
 
 	for _, container := range containers {
-		for _, network := range container.NetworkSettings.Networks {
+		for _, containerNetwork := range container.NetworkSettings.Networks {
 			for _, ip := range myIps {
-				if network.IPAddress == ip.String() {
-					networkIDs = append(networkIDs, network.NetworkID)
+				if containerNetwork.IPAddress == ip.String() {
+					networkIDs = append(networkIDs, containerNetwork.NetworkID)
 				}
 			}
 		}
@@ -72,10 +72,10 @@ func (a *dockerClientAdapter) GetContainerNetworkIps(container types.Container) 
 
 		return nil
 	}
-	for _, network := range container.NetworkSettings.Networks {
+	for _, containerNetwork := range container.NetworkSettings.Networks {
 		for _, myNetwork := range networkIDs {
-			if network.NetworkID == myNetwork {
-				ips = append(ips, network.IPAddress)
+			if containerNetwork.NetworkID == myNetwork {
+				ips = append(ips, containerNetwork.IPAddress)
 			}
 		}
 	}
