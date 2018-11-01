@@ -1,0 +1,11 @@
+workspace:
+  base: /go/src/github.com/Oppodelldog/docker-dns
+  path: /
+
+pipeline:
+  build:
+    image: oppodelldog/docker-dns:latest
+    pull: true
+    commands:
+      - make ci
+      - docker ps

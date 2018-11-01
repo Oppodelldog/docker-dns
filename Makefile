@@ -1,9 +1,9 @@
 setup: ## Install all the build and lint dependencies
-	go get -u gopkg.in/alecthomas/gometalinter.v2
+	cd $$GOPATH && wget -O- https://git.io/vp6lP | sh 
 	go get -u github.com/golang/dep/cmd/dep
+	go get -u golang.org/x/tools/cmd/cover
 	go get -u golang.org/x/tools/cmd/goimports
 	dep ensure
-	gometalinter --install --update
 
 fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
@@ -29,7 +29,9 @@ lint: ## Run all the linters
 		--enable=goconst \
 		--deadline=10m \
 		./... | grep -v "mocks"
-
+ci:
+	# test
+	
 run:
 	docker-compose up
 
