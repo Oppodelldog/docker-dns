@@ -7,5 +7,4 @@ pipeline:
     image: oppodelldog/docker-dns:latest
     pull: true
     commands:
-      - make ci
       - docker ps
