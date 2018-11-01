@@ -30,7 +30,7 @@ lint: ## Run all the linters
 		--deadline=10m \
 		./... | grep -v "mocks"
 ci:
-	# test
+	# test 1
 	
 run:
 	docker-compose up
