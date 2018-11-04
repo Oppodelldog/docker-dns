@@ -8,3 +8,5 @@ pipeline:
     pull: true
     commands:
       - docker ps
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
