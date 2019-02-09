@@ -22,7 +22,7 @@ docker run \
  -v /var/run/docker.sock:/var/run/docker.sock \
  -w ${containerProjectDir}/dnsserver \
  ${testImage} \
- bash -c "go run cmd/main.go"
+ bash -c "go get ./... && go run cmd/main.go"
 )
 
 dnsIp=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${containerDNS})
