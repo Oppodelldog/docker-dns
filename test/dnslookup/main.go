@@ -1,45 +1,60 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
-
-var wg sync.WaitGroup
 
 func main() {
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+
+	testSuccess := make(chan bool)
+	go lookup(ctx, testSuccess, "pong")
+	go lookup(ctx, testSuccess, "www.pong.com")
+	go lookup(ctx, testSuccess, "ponge.longe.long.com")
+	numberOfTests := 3
+
+	var noTestsSuccessful int
 	for {
 		select {
 		case sig := <-signals:
 			fmt.Println("signal", sig)
+			cancel()
 			os.Exit(0)
+		case <-ctx.Done():
+			fmt.Println("test timed out")
+			os.Exit(1)
+		case <-testSuccess:
+			noTestsSuccessful++
 		default:
-			go lookup("pong")
-			go lookup("www.pong.com")
-			go lookup("ponge.longe.long.com")
-			wg.Wait()
-			time.Sleep(1 * time.Second)
+			if noTestsSuccessful == numberOfTests {
+				fmt.Println("test successful")
+				return
+			}
 		}
 	}
 }
 
-func lookup(host string) {
-	wg.Add(1)
-	ips, err := net.LookupIP(host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "DNS Lookup failed: %v\n", err)
+func lookup(ctx context.Context, testSuccess chan bool, host string) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_, err := net.LookupIP(host)
+			if err == nil {
+				testSuccess <- true
+				return
+			}
+		}
 	}
-	for _, ip := range ips {
-		fmt.Printf("%s. IN A %s\n", host, ip.String())
-	}
-	wg.Done()
 }
