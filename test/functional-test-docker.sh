@@ -2,7 +2,11 @@
 set -ex
 
 function finish {
+    echo "cleaning up"
     set +e
+    docker kill ${containerDNS}
+    docker kill ${containerPong}
+    docker kill ${containerDNSTester}    
     docker rm -f ${containerDNS}
     docker rm -f ${containerPong}
     docker rm -f ${containerDNSTester}
