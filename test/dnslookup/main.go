@@ -16,7 +16,7 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 
 	testSuccess := make(chan bool)
 	go lookup(ctx, testSuccess, "pong")
