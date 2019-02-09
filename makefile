@@ -37,6 +37,7 @@ run:
 	docker-compose up
 	
 build:
+	go version
 	go env
 	mkdir -p $(BUILD_FOLDER)
 	go build -o $(BUILD_FOLDER)/dnsserver dnsserver/cmd/main.go
