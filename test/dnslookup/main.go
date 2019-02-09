@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	fmt.Println("starting functional test")
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
@@ -27,7 +28,7 @@ func main() {
 	for {
 		select {
 		case sig := <-signals:
-			fmt.Println("signal", sig)
+			fmt.Printf("received signal %v", sig)
 			cancel()
 			os.Exit(0)
 		case <-ctx.Done():
