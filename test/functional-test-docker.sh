@@ -1,6 +1,13 @@
 #!/bin/bash
 set -ex
 
+function finish {
+    docker rm -f ${containerDNS}
+    docker rm -f ${containerPong}
+    docker rm -f ${containerDNSTester}
+}
+trap finish EXIT
+
 projectDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )"
 containerProjectDir="/go/src/github.com/Oppodelldog/docker-dns"
 testImage="golang:1.11.0"
