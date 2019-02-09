@@ -23,7 +23,7 @@ docker run \
  -v ${projectDir}:${containerProjectDir}  \
  -w ${containerProjectDir} \
  ${testImage} \
- bash -c "go get ./... && mkdir -p .build-artifacts && go build -o .build-artifacts/dnsserver dnsserver/cmd/main.go && chmod -R 0777 .build-artifacts"
+ bash -c "make build"
 
 echo "now go starting the test"
 

@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Oppodelldog/docker-dns/dnsserver"
 )

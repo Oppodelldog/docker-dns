@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/Oppodelldog/docker-dns/network"
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 )
 
 type (

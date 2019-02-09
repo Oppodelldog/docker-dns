@@ -1,3 +1,6 @@
+BUILD_FOLDER = ".build-artifacts"
+export GO111MODULE = on
+
 setup: ## Install all the build and lint dependencies
 	go get -u gopkg.in/alecthomas/gometalinter.v2
 	go get -u github.com/golang/dep/cmd/dep
@@ -32,6 +35,12 @@ lint: ## Run all the linters
 
 run:
 	docker-compose up
+	
+build:
+	go env
+	mkdir -p $(BUILD_FOLDER)
+	go build -o $(BUILD_FOLDER)/dnsserver dnsserver/cmd/main.go
+	chmod a+rwx -R $(BUILD_FOLDER)
 
 # Self-Documented Makefile see https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
