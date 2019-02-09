@@ -2,6 +2,7 @@
 set -ex
 
 function finish {
+    set +e
     docker rm -f ${containerDNS}
     docker rm -f ${containerPong}
     docker rm -f ${containerDNSTester}
