@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+set -ex
 
 function finish {
     docker kill ${containerDNS}
