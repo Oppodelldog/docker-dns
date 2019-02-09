@@ -15,7 +15,7 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 
 	testSuccess := make(chan bool)
 	go lookup(ctx, testSuccess, "pong")
@@ -35,9 +35,10 @@ func main() {
 			os.Exit(1)
 		case <-testSuccess:
 			noTestsSuccessful++
+			fmt.Println("partial test successful")
 		default:
 			if noTestsSuccessful == numberOfTests {
-				fmt.Println("test successful")
+				fmt.Println("all tests successful")
 				return
 			}
 		}

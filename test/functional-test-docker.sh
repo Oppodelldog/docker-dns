@@ -10,7 +10,7 @@ trap finish EXIT
 
 projectDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )"
 containerProjectDir="/go/src/github.com/Oppodelldog/docker-dns"
-testImage="golang:1.11.0"
+testImage="golang:1.11.5"
 
 containerDNS=$(
 docker run \
