@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"github.com/Oppodelldog/filediscovery"
 	"io/ioutil"
 	"strings"
 	"sync"
@@ -13,17 +14,19 @@ import (
 )
 
 const aliasLoaderDefaultInterval = 10 * time.Second
-const aliasFileDefaultPath = "data/alias"
+const aliasFilePathEnvKey = "DOCKER_DNS_ALIAS_FILE"
 
 type aliasFileLoader struct {
-	aliases map[string]string
-	lock    sync.Mutex
+	aliases         map[string]string
+	aliasFileFinder filediscovery.FileDiscoverer
+	lock            sync.Mutex
 }
 
 func NewAliasFileLoader(ctx context.Context) *aliasFileLoader {
 	a := &aliasFileLoader{
-		aliases: map[string]string{},
-		lock:    sync.Mutex{},
+		aliases:         map[string]string{},
+		aliasFileFinder: filediscovery.New([]filediscovery.FileLocationProvider{filediscovery.EnvVarFilePathProvider(aliasFilePathEnvKey), filediscovery.ExecutableDirProvider("data")}),
+		lock:            sync.Mutex{},
 	}
 
 	a.startAliasLoader(ctx)
@@ -50,8 +53,14 @@ func (l *aliasFileLoader) startAliasLoader(ctx context.Context) {
 }
 
 func (l *aliasFileLoader) loadAliasesFromFile() {
-	logrus.Info("Loading Alias file")
-	content, err := ioutil.ReadFile(aliasFileDefaultPath)
+	logrus.Debug("Loading Alias file")
+	aliasFilePath, err := l.aliasFileFinder.Discover("alias")
+	if err != nil {
+		logrus.Errorf("Could not find alias file: %v\n", err)
+		return
+	}
+	logrus.Infof("Loading Alias file from '%s'", aliasFilePath)
+	content, err := ioutil.ReadFile(aliasFilePath)
 	if err != nil {
 		logrus.Errorf("Could not load aliases: %v\n", err)
 		return
@@ -70,6 +79,7 @@ func (l *aliasFileLoader) loadAliasesFromFile() {
 	}
 
 	numberOfAliases := len(newAliases)
+	logrus.Errorf("number of aliases: %v\n", numberOfAliases)
 
 	if numberOfAliases > 0 {
 		l.lock.Lock()

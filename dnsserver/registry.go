@@ -31,8 +31,8 @@ type (
 func NewDNSRegistry(aliasProvider AliasProvider) DNSRegistry {
 	return &dnsRegistry{
 		ipAddressByContainerName: map[string]string{},
-		lock:          sync.Mutex{},
-		aliasProvider: aliasProvider,
+		lock:                     sync.Mutex{},
+		aliasProvider:            aliasProvider,
 	}
 }
 
