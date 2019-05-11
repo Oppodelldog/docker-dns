@@ -181,6 +181,7 @@ func createDnsContainer(networkInfo Net) string {
 
 func createBaseGoContainerStructs(cmd string, networkInfo Net) (*container.Config, *container.HostConfig, *network.NetworkingConfig) {
 	hostDir, _ := os.Getwd()
+	fmt.Println("binding host volume: ", hostDir, containerDir)
 
 	containerConfig := &container.Config{
 		Env:        []string{"GOPROXY=https://proxy.golang.org", "GO111MODULE=on"},
