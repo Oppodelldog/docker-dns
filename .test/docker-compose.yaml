@@ -2,21 +2,30 @@ version: '3.0'
 services:
 
   dnsserver:
-    command: go run cmd/main.go
-    image: golang:1.11.0
+    command: go run dnsserver/cmd/main.go
+    image: golang:1.12.4
     volumes:
     - ../:/go/src/github.com/Oppodelldog/docker-dns
     - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /go/src/github.com/Oppodelldog/docker-dns/dnsserver
+    - "/media/nils/code/go-workspace:/go/pkg"
+    environment:
+      - "GOPROXY=https://proxy.golang.org"
+      - "GO111MODULE=on"
+      - "DOCKER_DNS_ALIAS_FILE=dnsserver/data/alias"
+    working_dir: /go/src/github.com/Oppodelldog/docker-dns
     networks:
       app_net:
         ipv4_address:  172.16.0.3
 
   dnstester:
-    command: go run test/dnslookup/main.go
+    command: go run .test/dnslookup/main.go
     image: golang:1.11.0
     volumes:
     - ../:/go/src/github.com/Oppodelldog/docker-dns
+    - "/media/nils/code/go-workspace:/go/pkg"
+    environment:
+      - "GOPROXY=https://proxy.golang.org"
+      - "GO111MODULE=on"
     working_dir: /go/src/github.com/Oppodelldog/docker-dns
     dns:
     - 172.16.0.3
@@ -24,10 +33,14 @@ services:
     - app_net
 
   pong:
-    command: go run test/pong/main.go
+    command: go run .test/pong/main.go
     image: golang:1.11.0
     volumes:
     - ../:/go/src/github.com/Oppodelldog/docker-dns
+    - "/media/nils/code/go-workspace:/go/pkg"
+    environment:
+      - "GOPROXY=https://proxy.golang.org"
+      - "GO111MODULE=on" 
     working_dir: /go/src/github.com/Oppodelldog/docker-dns
     networks:
     - app_net

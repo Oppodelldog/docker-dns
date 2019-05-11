@@ -30,15 +30,13 @@ docker run \
  bash -c "make build"
 
 echo "now go starting the test"
+commonContainerSettings=" --rm -d -v ${projectDir}:${containerProjectDir} -w ${containerProjectDir}"
 
 containerDNS=$(
 docker run \
  --name dnsserver \
- --rm \
- -d \
- -v ${projectDir}:${containerProjectDir}  \
+ ${commonContainerSettings} \
  -v /var/run/docker.sock:/var/run/docker.sock \
- -w ${containerProjectDir} \
  ${testImage} \
  bash -c "cd dnsserver && ../.build-artifacts/dnsserver"
 )
@@ -51,10 +49,7 @@ echo "dns ip is ${dnsIp}"
 containerPong=$(
 docker run \
  --name pong \
- --rm \
- -d \
- -v ${projectDir}:${containerProjectDir} \
- -w ${containerProjectDir}  \
+ ${commonContainerSettings} \
  ${testImage} \
  bash -c "go run test/pong/main.go"
 )
@@ -64,10 +59,7 @@ containerDNSTester=$(
 docker run \
  --name dnstester \
  --dns=${dnsIp} \
- --rm \
- -d \
- -v ${projectDir}:${containerProjectDir}  \
- -w ${containerProjectDir}  \
+ ${commonContainerSettings} \
  ${testImage} \
  bash -c "go run test/dnslookup/main.go"
 )

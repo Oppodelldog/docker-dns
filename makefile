@@ -43,6 +43,12 @@ build:
 	go build -o $(BUILD_FOLDER)/dnsserver dnsserver/cmd/main.go
 	chmod a+rwx -R $(BUILD_FOLDER)
 
+ci: # todo
+	echo "YOYO"
+
+functional-tests:
+	go run .test/main.go 
+	
 # Self-Documented Makefile see https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
