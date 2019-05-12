@@ -133,18 +133,8 @@ func startContainer(containerID string) {
 	panicOnError(err)
 }
 
-func shutDownContainer(containerID string, wg *sync.WaitGroup) {
-	stopTimeout := containerStopTimeout
-	_ = dockerClient.ContainerStop(ctx, containerID, &stopTimeout)
-
-	waitContainerToFadeAway(containerID)
-	wg.Done()
-}
-
 func createSimpleGoContainer(containerName, cmd string, networkInfo Net) string {
-
 	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(cmd, networkInfo)
-
 	containerBody, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, containerName)
 	panicOnError(err)
 
@@ -152,11 +142,8 @@ func createSimpleGoContainer(containerName, cmd string, networkInfo Net) string 
 }
 
 func createTesterContainer(networkInfo Net) string {
-
 	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(dnsTesterCmd, networkInfo)
-
 	hostConfig.DNS = []string{dnsServerIP}
-
 	containerBody, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, dnsTesterContainerName)
 	panicOnError(err)
 	testerContainerID := containerBody.ID
@@ -165,9 +152,7 @@ func createTesterContainer(networkInfo Net) string {
 }
 
 func createDnsContainer(networkInfo Net) string {
-
 	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(dnsServerCmd, networkInfo)
-
 	networkConfig.EndpointsConfig[networkInfo.NetworkName].IPAMConfig = &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}
 	hostConfig.Binds = append(hostConfig.Binds, dockerSocketVolumeBind)
 	containerConfig.Env = append(containerConfig.Env, dnsServerAliasEnv)
@@ -188,7 +173,7 @@ func createBaseGoContainerStructs(cmd string, networkInfo Net) (*container.Confi
 		WorkingDir: containerDir,
 		Image:      image,
 		Cmd:        strslice.StrSlice(strings.Split(cmd, " ")),
-		Labels:     map[string]string{"docker-dns": "functional-test"},
+		Labels:     getLabels(),
 	}
 
 	hostConfig := &container.HostConfig{
@@ -228,13 +213,21 @@ func createNetwork() Net {
 				},
 			},
 		},
-		Labels: map[string]string{"docker-dns": "functional-test"},
+		Labels: getLabels(),
 	}
 
 	resp, err := dockerClient.NetworkCreate(ctx, networkName, options)
 	panicOnError(err)
 
 	return Net{resp.ID, networkName}
+}
+
+func shutDownContainer(containerID string, wg *sync.WaitGroup) {
+	stopTimeout := containerStopTimeout
+	_ = dockerClient.ContainerStop(ctx, containerID, &stopTimeout)
+
+	waitContainerToFadeAway(containerID)
+	wg.Done()
 }
 
 func cleanupTestNetwork() {
@@ -246,6 +239,10 @@ func cleanupTestNetwork() {
 			fmt.Printf("could not remove network: %v\n", err)
 		}
 	}
+}
+
+func getLabels() map[string]string {
+	return map[string]string{"docker-dns": "functional-test"}
 }
 
 func getFilterArgs() filters.Args {
