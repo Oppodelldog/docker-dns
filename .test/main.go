@@ -22,7 +22,7 @@ import (
 var ctx = context.Background()
 var dockerClient *client.Client
 
-const image = "golang:1.12.4"
+const image = "golang:1.13.0"
 const containerStopTimeout = time.Second * 10
 const containerDir = "/app"
 const dockerSocketVolumeBind = "/var/run/docker.sock:/var/run/docker.sock"
@@ -71,6 +71,10 @@ func main() {
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
 	<-sigChannel
 
+	dumpContainerLogs(ctx, dnsContainerID)
+	dumpContainerLogs(ctx, dnsTesterContainerID)
+	dumpContainerLogs(ctx, pongContainerID)
+
 	fmt.Println("cleanup")
 	cleanup()
 
@@ -79,10 +83,32 @@ func main() {
 	os.Exit(res)
 }
 
+func dumpContainerLogs(ctx context.Context, containerId string) {
+	fmt.Printf("Container log: %s\n", containerId)
+	logReader, err := dockerClient.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStderr: true, ShowStdout: true})
+	if err != nil {
+		fmt.Printf("error reading container log for '%s': %v\n", containerId, err)
+		return
+	}
+
+	log, err := ioutil.ReadAll(logReader)
+	if err != nil {
+		fmt.Printf("error reading container log stream for '%s': %v\n", containerId, err)
+		return
+	}
+
+	fmt.Println(string(log))
+}
+
 func waitForTestFinish(containerID string) {
 	go func() {
-		waitContainerToFadeAway(containerID)
-		_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+		if !waitContainerToFadeAway(containerID) {
+			err := dockerClient.ContainerKill(context.Background(), containerID, "kill")
+			if err != nil {
+				fmt.Println("Error while killing container,", err)
+			}
+			_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+		}
 	}()
 }
 
@@ -103,13 +129,21 @@ func checkResults() int {
 	}
 }
 
-func waitContainerToFadeAway(containerID string) {
+func waitContainerToFadeAway(containerID string) bool {
+	var i = 0
 	for {
+		i++
 		_, err := dockerClient.ContainerInspect(ctx, containerID)
+
 		if client.IsErrNotFound(err) {
-			return
+			return true
 		}
+
 		time.Sleep(1 * time.Second)
+		if i == 20 {
+			fmt.Println("waiting for tests to finish timed out")
+			return false
+		}
 	}
 }
 
@@ -177,7 +211,7 @@ func createBaseGoContainerStructs(cmd string, networkInfo Net) (*container.Confi
 	}
 
 	hostConfig := &container.HostConfig{
-		AutoRemove:  true,
+		AutoRemove:  false,
 		NetworkMode: container.NetworkMode(networkInfo.NetworkName),
 		Binds:       []string{hostDir + ":" + containerDir},
 	}

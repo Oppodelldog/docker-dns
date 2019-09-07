@@ -1,5 +1,9 @@
 package dnsserver
 
+import (
+	"github.com/sirupsen/logrus"
+)
+
 type ContainerDNSSurvey struct {
 	dnsRegisterer          DNSRegisterer
 	runningContainerGetter RunningContainersGetter
@@ -24,6 +28,10 @@ func (s *ContainerDNSSurvey) Run() {
 
 	for _, container := range containers {
 		ips := s.networkIPsGetter.GetContainerNetworkIps(container)
+		if len(ips) == 0 {
+			logrus.Debugf("skipping container without ip '%s'", container.ID)
+			continue
+		}
 		for _, containerName := range container.Names {
 			ip := ips[len(ips)-1]
 			s.dnsRegisterer.Register(containerName, ip)

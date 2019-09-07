@@ -1,5 +1,4 @@
 BUILD_FOLDER = ".build-artifacts"
-export GO111MODULE = on
 
 setup: ## Install tools
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.17.1

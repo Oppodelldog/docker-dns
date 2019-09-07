@@ -31,9 +31,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), getTimeoutFromEnv())
 
 	testSuccess := make(chan bool)
-	go lookup(ctx, testSuccess, "pong")
-	go lookup(ctx, testSuccess, "www.pong.com")
-	go lookup(ctx, testSuccess, "ponge.longe.long.com")
+	go lookup(f, ctx, testSuccess, "pong", "regular docker name, basic docker name resolving, should resolve without of docker-dns")
+	go lookup(f, ctx, testSuccess, "www.pong.com", "some custom domain, needs docker-dns")
+	go lookup(f, ctx, testSuccess, "ponge.longe.long.com", "some other custom domain, needs docker-dns")
 	numberOfTests := 3
 
 	var noTestsSuccessful int
@@ -48,7 +48,7 @@ func main() {
 			os.Exit(1)
 		case <-testSuccess:
 			noTestsSuccessful++
-			writeTestOutput(f, "partial test successful")
+			writeTestOutput(f, "%v of %v tests successful", noTestsSuccessful, numberOfTests)
 		default:
 			if noTestsSuccessful == numberOfTests {
 				writeTestOutput(f, successMessage)
@@ -61,7 +61,7 @@ func main() {
 func writeTestOutput(f *os.File, format string, args ...interface{}) {
 	var err error
 	if len(args) > 0 {
-		_, err = fmt.Fprintf(f, format+"\n", args)
+		_, err = fmt.Fprintf(f, format+"\n", args...)
 	} else {
 		_, err = fmt.Fprint(f, format+"\n")
 	}
@@ -81,18 +81,20 @@ func getTimeoutFromEnv() time.Duration {
 	}
 }
 
-func lookup(ctx context.Context, testSuccess chan bool, host string) {
+func lookup(f *os.File, ctx context.Context, testSuccess chan bool, host string, testDescription string) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			_, err := net.LookupIP(host)
+			timeoutCtx, _ := context.WithTimeout(context.Background(), time.Second*time.Duration(4))
+			_, err := net.DefaultResolver.LookupIPAddr(timeoutCtx, host)
 			if err == nil {
+				writeTestOutput(f, "success for test input '%s' (%s)", host, testDescription)
 				testSuccess <- true
 				return
 			}
-			fmt.Println(err)
+			writeTestOutput(f, "error for test input '%s' (%s): %v", host, testDescription, err)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
