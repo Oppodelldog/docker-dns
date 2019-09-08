@@ -4,26 +4,39 @@ import (
 	"context"
 	"fmt"
 	"github.com/Oppodelldog/dockertest"
-	"github.com/docker/docker/api/types/network"
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
 
-const image = "golang:1.13.0"
-const containerDir = "/app"
+const goImage = "golang:1.13.0"
+const imagePackagePath = "/go/pkg"
+const containerProjectRoot = "/go/src/github.com/Oppodelldog"
+const workingDir = "/go/src/github.com/Oppodelldog/docker-dns"
+
 const subNet = "172.28.0.0/16"
 const ipRange = "172.28.5.0/24"
 const dnsServerIP = "172.28.5.1"
-const dnsTesterOutputFile = "dns-tester.log"
 const networkName = "test_network"
+
+const dockerSocketPath = "/var/run/docker.sock"
+
+const dnsTesterOutputFile = "dns-tester.log"
 
 var ctx = context.Background()
 
 func main() {
 	hostDir, _ := os.Getwd()
+	projectRoot := filepath.Dir(hostDir)
+	goPath, hasGoPath := os.LookupEnv("GOPATH")
+	if !hasGoPath {
+		panic("did not find GOPATH, it's required for caching modules")
+	}
+	localPackagePath := path.Join(goPath, "pkg")
 
 	fmt.Println("connecting to docker")
 	var err error
@@ -34,42 +47,45 @@ func main() {
 
 	fmt.Println("create network")
 	networkBuilder := dt.CreateSimpleNetwork(networkName, subNet, ipRange)
-	_, err = networkBuilder.Create()
+	net, err := networkBuilder.Create()
 	panicOnError(err)
 
 	fmt.Println("create containers")
-	dnsContainerBuilder := dt.NewContainer("dns-server", image, "go run dnsserver/cmd/main.go")
-	dnsContainerBuilder.NetworkingConfig.EndpointsConfig[networkName] = &network.EndpointSettings{IPAMConfig: &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}}
-	dnsContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
-	dnsContainerBuilder.HostConfig.Binds = append(dnsContainerBuilder.HostConfig.Binds, "/var/run/docker.sock:/var/run/docker.sock")
 
-	dnsContainerBuilder.ContainerConfig.Env = append(dnsContainerBuilder.ContainerConfig.Env, "DOCKER_DNS_ALIAS_FILE=dnsserver/data/alias")
-	dnsContainerBuilder.ContainerConfig.WorkingDir = containerDir
-
-	dnsContainer, err := dnsContainerBuilder.CreateContainer()
+	dnsContainer, err := dt.NewContainer("dns-server", goImage, "go run dnsserver/cmd/main.go").
+		ConnectToNetwork(net).
+		SetIPAddress(dnsServerIP, networkName).
+		Mount(localPackagePath, imagePackagePath).
+		Mount(projectRoot, containerProjectRoot).
+		Mount(dockerSocketPath, dockerSocketPath).
+		SetEnv("DOCKER_DNS_ALIAS_FILE", "dnsserver/data/alias").
+		SetWorkingDir(workingDir).
+		CreateContainer()
 	panicOnError(err)
 
-	dnsTesterContainerBuilder := dt.NewContainer("test", image, "go run .test/dnslookup/main.go")
-	dnsTesterContainerBuilder.HostConfig.DNS = []string{dnsServerIP}
-	dnsTesterContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
-	dnsTesterContainerBuilder.ContainerConfig.WorkingDir = containerDir
-
-	dnsTesterContainer, err := dnsTesterContainerBuilder.CreateContainer()
+	dnsTesterContainer, err := dt.NewContainer("test", goImage, "go run .test/dnslookup/main.go").
+		ConnectToNetwork(net).
+		AddDns(dnsServerIP).
+		Mount(localPackagePath, imagePackagePath).
+		Mount(projectRoot, containerProjectRoot).
+		SetWorkingDir(workingDir).
+		CreateContainer()
 	panicOnError(err)
 
-	pongContainerBuilder := dt.NewContainer("pong", image, "go run .test/pong/main.go")
-	pongContainerBuilder.ContainerConfig.WorkingDir = containerDir
-	pongContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
-
-	pongContainer, err := pongContainerBuilder.CreateContainer()
+	pongContainer, err := dt.NewContainer("pong", goImage, "go run .test/pong/main.go").
+		ConnectToNetwork(net).
+		Mount(localPackagePath, imagePackagePath).
+		Mount(projectRoot, containerProjectRoot).
+		SetWorkingDir(workingDir).
+		CreateContainer()
 	panicOnError(err)
 
 	fmt.Println("start containers")
 	err = dnsContainer.StartContainer()
 	panicOnError(err)
-	err = dnsTesterContainer.StartContainer()
-	panicOnError(err)
 	err = pongContainer.StartContainer()
+	panicOnError(err)
+	err = dnsTesterContainer.StartContainer()
 	panicOnError(err)
 
 	fmt.Println("wait for tests to finish")

@@ -17,7 +17,7 @@ const dnsTesterLog = "dns-tester.log"
 const successMessage = "all tests successful"
 
 func main() {
-	f, err := os.Create(dnsTesterLog)
+	f, err := os.OpenFile(dnsTesterLog, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0655)
 	if err != nil {
 		panic(err)
 	}

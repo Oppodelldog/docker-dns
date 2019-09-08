@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/Oppodelldog/filediscovery"
 	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Oppodelldog/filediscovery"
 
 	"github.com/sirupsen/logrus"
 )
