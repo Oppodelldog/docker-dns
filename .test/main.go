@@ -3,120 +3,99 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
+	"github.com/Oppodelldog/dockertest"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/strslice"
-	"github.com/docker/docker/client"
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
-	"sync"
 	"syscall"
-	"time"
 )
 
-var ctx = context.Background()
-var dockerClient *client.Client
-
 const image = "golang:1.13.0"
-const containerStopTimeout = time.Second * 10
 const containerDir = "/app"
-const dockerSocketVolumeBind = "/var/run/docker.sock:/var/run/docker.sock"
-const dnsTesterSuccessPattern = "all tests successful"
-const dnsTesterOutputFile = "dns-tester.log"
-const networkName = "test_network"
 const subNet = "172.28.0.0/16"
 const ipRange = "172.28.5.0/24"
 const dnsServerIP = "172.28.5.1"
-const dnsServerAliasEnv = "DOCKER_DNS_ALIAS_FILE=dnsserver/data/alias"
-const dnsServerContainerName = "dns-server"
-const dnsTesterContainerName = "test"
-const pongContainerName = "pong"
-const dnsServerCmd = "go run dnsserver/cmd/main.go"
-const dnsTesterCmd = "go run .test/dnslookup/main.go"
-const pongCmd = "go run .test/pong/main.go"
+const dnsTesterOutputFile = "dns-tester.log"
+const networkName = "test_network"
 
-type Net struct {
-	NetworkID   string
-	NetworkName string
-}
+var ctx = context.Background()
 
 func main() {
+	hostDir, _ := os.Getwd()
+
 	fmt.Println("connecting to docker")
 	var err error
-	dockerClient, err = client.NewEnvClient()
-	panicOnError(err)
+	dt, err := dockertest.New()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println("create network")
-	networkInfo := createNetwork()
+	dt.CreateNetwork(networkName, subNet, ipRange)
 
 	fmt.Println("create containers")
-	dnsContainerID := createDnsContainer(networkInfo)
-	dnsTesterContainerID := createTesterContainer(networkInfo)
-	pongContainerID := createSimpleGoContainer(pongContainerName, pongCmd, networkInfo)
+	dnsContainerBuilder := dt.NewContainer("dns-server", image, "go run dnsserver/cmd/main.go")
+	dnsContainerBuilder.NetworkingConfig.EndpointsConfig[networkName].IPAMConfig = &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}
+	dnsContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
+	dnsContainerBuilder.HostConfig.Binds = append(dnsContainerBuilder.HostConfig.Binds, "/var/run/docker.sock:/var/run/docker.sock")
+
+	dnsContainerBuilder.ContainerConfig.Env = append(dnsContainerBuilder.ContainerConfig.Env, "DOCKER_DNS_ALIAS_FILE=dnsserver/data/alias")
+	dnsContainerBuilder.ContainerConfig.WorkingDir = containerDir
+
+	dnsContainer, err := dnsContainerBuilder.CreateContainer()
+	panicOnError(err)
+
+	dnsTesterContainerBuilder := dt.NewContainer("test", image, "go run .test/dnslookup/main.go")
+	dnsTesterContainerBuilder.HostConfig.DNS = []string{dnsServerIP}
+	dnsTesterContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
+	dnsTesterContainerBuilder.ContainerConfig.WorkingDir = containerDir
+
+	dnsTesterContainer, err := dnsTesterContainerBuilder.CreateContainer()
+	panicOnError(err)
+
+	pongContainerBuilder := dt.NewContainer("pong", image, "go run .test/pong/main.go")
+	pongContainerBuilder.ContainerConfig.WorkingDir = containerDir
+	pongContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
+
+	pongContainer, err := pongContainerBuilder.CreateContainer()
+	panicOnError(err)
 
 	fmt.Println("start containers")
-	startContainer(dnsContainerID)
-	startContainer(dnsTesterContainerID)
-	startContainer(pongContainerID)
+	err = dnsContainer.StartContainer()
+	panicOnError(err)
+	err = dnsTesterContainer.StartContainer()
+	panicOnError(err)
+	err = pongContainer.StartContainer()
+	panicOnError(err)
 
 	fmt.Println("wait for tests to finish")
-	waitForTestFinish(dnsTesterContainerID)
+	dt.WaitForContainerToExit(dnsTesterContainer)
 
 	sigChannel := make(chan os.Signal)
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
 	<-sigChannel
 
-	dumpContainerLogs(ctx, dnsContainerID)
-	dumpContainerLogs(ctx, dnsTesterContainerID)
-	dumpContainerLogs(ctx, pongContainerID)
+	dt.DumpContainerLogs(ctx, dnsContainer)
+	dt.DumpContainerLogs(ctx, dnsTesterContainer)
+	dt.DumpContainerLogs(ctx, pongContainer)
 
 	fmt.Println("cleanup")
-	cleanup()
+	dt.Cleanup()
 
 	fmt.Println("check test results")
 	res := checkResults()
 	os.Exit(res)
 }
 
-func dumpContainerLogs(ctx context.Context, containerId string) {
-	fmt.Printf("Container log: %s\n", containerId)
-	logReader, err := dockerClient.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStderr: true, ShowStdout: true})
-	if err != nil {
-		fmt.Printf("error reading container log for '%s': %v\n", containerId, err)
-		return
-	}
-
-	log, err := ioutil.ReadAll(logReader)
-	if err != nil {
-		fmt.Printf("error reading container log stream for '%s': %v\n", containerId, err)
-		return
-	}
-
-	fmt.Println(string(log))
-}
-
-func waitForTestFinish(containerID string) {
-	go func() {
-		if !waitContainerToFadeAway(containerID) {
-			err := dockerClient.ContainerKill(context.Background(), containerID, "kill")
-			if err != nil {
-				fmt.Println("Error while killing container,", err)
-			}
-			_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-		}
-	}()
-}
-
 func checkResults() int {
 	content, err := ioutil.ReadFile(dnsTesterOutputFile)
-	panicOnError(err)
+	if err != nil {
+		panic(err)
+	}
 
-	if strings.Contains(string(content), dnsTesterSuccessPattern) {
+	if strings.Contains(string(content), "all tests successful") {
 		fmt.Println("Test successfull")
 		fmt.Println("-------------------------------")
 		fmt.Println(string(content))
@@ -127,162 +106,6 @@ func checkResults() int {
 		fmt.Println(string(content))
 		return 1
 	}
-}
-
-func waitContainerToFadeAway(containerID string) bool {
-	var i = 0
-	for {
-		i++
-		_, err := dockerClient.ContainerInspect(ctx, containerID)
-
-		if client.IsErrNotFound(err) {
-			return true
-		}
-
-		time.Sleep(1 * time.Second)
-		if i == 20 {
-			fmt.Println("waiting for tests to finish timed out")
-			return false
-		}
-	}
-}
-
-func cleanup() {
-	shutDownContainers := &sync.WaitGroup{}
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{Filters: getFilterArgs()})
-	if err == nil {
-		shutDownContainers.Add(len(containers))
-		for _, testContainer := range containers {
-			go shutDownContainer(testContainer.ID, shutDownContainers)
-		}
-	} else {
-		fmt.Printf("error finding test containers: %v\n", err)
-	}
-	shutDownContainers.Wait()
-	cleanupTestNetwork()
-}
-
-func startContainer(containerID string) {
-	err := dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
-	panicOnError(err)
-}
-
-func createSimpleGoContainer(containerName, cmd string, networkInfo Net) string {
-	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(cmd, networkInfo)
-	containerBody, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, containerName)
-	panicOnError(err)
-
-	return containerBody.ID
-}
-
-func createTesterContainer(networkInfo Net) string {
-	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(dnsTesterCmd, networkInfo)
-	hostConfig.DNS = []string{dnsServerIP}
-	containerBody, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, dnsTesterContainerName)
-	panicOnError(err)
-	testerContainerID := containerBody.ID
-
-	return testerContainerID
-}
-
-func createDnsContainer(networkInfo Net) string {
-	containerConfig, hostConfig, networkConfig := createBaseGoContainerStructs(dnsServerCmd, networkInfo)
-	networkConfig.EndpointsConfig[networkInfo.NetworkName].IPAMConfig = &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}
-	hostConfig.Binds = append(hostConfig.Binds, dockerSocketVolumeBind)
-	containerConfig.Env = append(containerConfig.Env, dnsServerAliasEnv)
-
-	containerBody, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, dnsServerContainerName)
-	panicOnError(err)
-	dnsContainerID := containerBody.ID
-
-	return dnsContainerID
-}
-
-func createBaseGoContainerStructs(cmd string, networkInfo Net) (*container.Config, *container.HostConfig, *network.NetworkingConfig) {
-	hostDir, _ := os.Getwd()
-	fmt.Println("binding host volume: ", hostDir, containerDir)
-
-	containerConfig := &container.Config{
-		Env:        []string{"GOPROXY=https://proxy.golang.org", "GO111MODULE=on"},
-		WorkingDir: containerDir,
-		Image:      image,
-		Cmd:        strslice.StrSlice(strings.Split(cmd, " ")),
-		Labels:     getLabels(),
-	}
-
-	hostConfig := &container.HostConfig{
-		AutoRemove:  false,
-		NetworkMode: container.NetworkMode(networkInfo.NetworkName),
-		Binds:       []string{hostDir + ":" + containerDir},
-	}
-
-	if goPath, ok := os.LookupEnv("GOPATH"); ok {
-		hostConfig.Binds = append(hostConfig.Binds, path.Join(goPath, "pkg")+":/go/pkg")
-	}
-
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{
-			networkInfo.NetworkName: {
-				NetworkID: networkInfo.NetworkID,
-			},
-		},
-	}
-
-	return containerConfig, hostConfig, networkConfig
-}
-
-func createNetwork() Net {
-	cleanupTestNetwork()
-
-	options := types.NetworkCreate{
-		CheckDuplicate: true,
-		Attachable:     true,
-		Driver:         "bridge",
-		IPAM: &network.IPAM{
-			Driver: "default",
-			Config: []network.IPAMConfig{
-				{
-					Subnet:  subNet,
-					IPRange: ipRange,
-				},
-			},
-		},
-		Labels: getLabels(),
-	}
-
-	resp, err := dockerClient.NetworkCreate(ctx, networkName, options)
-	panicOnError(err)
-
-	return Net{resp.ID, networkName}
-}
-
-func shutDownContainer(containerID string, wg *sync.WaitGroup) {
-	stopTimeout := containerStopTimeout
-	_ = dockerClient.ContainerStop(ctx, containerID, &stopTimeout)
-
-	waitContainerToFadeAway(containerID)
-	wg.Done()
-}
-
-func cleanupTestNetwork() {
-	res, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{Filters: getFilterArgs()})
-	panicOnError(err)
-	for _, networkResource := range res {
-		err := dockerClient.NetworkRemove(ctx, networkResource.ID)
-		if err != nil {
-			fmt.Printf("could not remove network: %v\n", err)
-		}
-	}
-}
-
-func getLabels() map[string]string {
-	return map[string]string{"docker-dns": "functional-test"}
-}
-
-func getFilterArgs() filters.Args {
-	filterArgs := filters.NewArgs()
-	filterArgs.Add("label", "docker-dns=functional-test")
-	return filterArgs
 }
 
 func panicOnError(err error) {
