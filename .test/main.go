@@ -33,11 +33,13 @@ func main() {
 	}
 
 	fmt.Println("create network")
-	dt.CreateNetwork(networkName, subNet, ipRange)
+	networkBuilder := dt.CreateSimpleNetwork(networkName, subNet, ipRange)
+	_, err = networkBuilder.Create()
+	panicOnError(err)
 
 	fmt.Println("create containers")
 	dnsContainerBuilder := dt.NewContainer("dns-server", image, "go run dnsserver/cmd/main.go")
-	dnsContainerBuilder.NetworkingConfig.EndpointsConfig[networkName].IPAMConfig = &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}
+	dnsContainerBuilder.NetworkingConfig.EndpointsConfig[networkName] = &network.EndpointSettings{IPAMConfig: &network.EndpointIPAMConfig{IPv4Address: dnsServerIP}}
 	dnsContainerBuilder.HostConfig.Binds = []string{hostDir + ":" + containerDir}
 	dnsContainerBuilder.HostConfig.Binds = append(dnsContainerBuilder.HostConfig.Binds, "/var/run/docker.sock:/var/run/docker.sock")
 

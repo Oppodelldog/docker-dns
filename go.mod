@@ -15,3 +15,5 @@ require (
 	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
+
+replace github.com/Oppodelldog/dockertest v0.0.1 => ../dockertest
