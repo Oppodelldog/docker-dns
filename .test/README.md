@@ -8,17 +8,8 @@ The test script and the docker-compose environment simulate the same behavior:
 * sice the **pong** is discovered by the **dnsserver**
 * **dnsserver** will answer all dns requests coming from **dnstester**
 
-The expected output are some valid DNS lookups for the strange domains. sth like:
-``` bash
-> test/functional-test-docker.sh
-
-pong. IN A 172.17.0.3
-ponge.longe.long.com. IN A 172.17.0.3
-www.pong.com. IN A 172.17.0.3
+Execute tests
+```bash
+make functional-tests
 ```
-
-In docker-compose you should find the same output when following the output of **dnstester**.
-```
-cd test
-docker-compose up
-```
+exit code will be 0 on success
