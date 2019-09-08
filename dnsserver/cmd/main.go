@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	logrus.SetLevel(logrus.DebugLevel)
 	ctx := getContextCanceledByInterrupt()
 
 	dockerClient, dockerClientDefer := getDockerClient()

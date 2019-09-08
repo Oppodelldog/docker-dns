@@ -67,10 +67,13 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 		address, ok := h.ipResolver.LookupIP(domain)
 		if ok {
+			logrus.Debugf("address found for %s", domain)
 			msg.Answer = append(msg.Answer, &dns.A{
 				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
 				A:   net.ParseIP(address),
 			})
+		} else {
+			logrus.Debugf("address not found for %s", domain)
 		}
 	}
 
