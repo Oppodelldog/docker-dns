@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/Oppodelldog/dockertest"
 	"io/ioutil"
@@ -27,8 +26,6 @@ const dockerSocketPath = "/var/run/docker.sock"
 
 const dnsTesterOutputFile = "dns-tester.log"
 
-var ctx = context.Background()
-
 func main() {
 	hostDir, _ := os.Getwd()
 	projectRoot := filepath.Dir(hostDir)
@@ -44,6 +41,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	dt.SetLogDir(path.Join(hostDir, ".test", "logs"))
 
 	fmt.Println("create network")
 	networkBuilder := dt.CreateSimpleNetwork(networkName, subNet, ipRange)
@@ -54,7 +52,7 @@ func main() {
 
 	dnsContainer, err := dt.NewContainer("dns-server", goImage, "go run dnsserver/cmd/main.go").
 		ConnectToNetwork(net).
-		SetIPAddress(dnsServerIP, networkName).
+		SetIPAddress(dnsServerIP, net).
 		Mount(localPackagePath, imagePackagePath).
 		Mount(projectRoot, containerProjectRoot).
 		Mount(dockerSocketPath, dockerSocketPath).
@@ -73,6 +71,7 @@ func main() {
 	panicOnError(err)
 
 	pongContainer, err := dt.NewContainer("pong", goImage, "go run .test/pong/main.go").
+		UseOriginalName().
 		ConnectToNetwork(net).
 		Mount(localPackagePath, imagePackagePath).
 		Mount(projectRoot, containerProjectRoot).
@@ -81,12 +80,9 @@ func main() {
 	panicOnError(err)
 
 	fmt.Println("start containers")
-	err = dnsContainer.StartContainer()
-	panicOnError(err)
-	err = pongContainer.StartContainer()
-	panicOnError(err)
-	err = dnsTesterContainer.StartContainer()
-	panicOnError(err)
+	err = dt.StartContainer(dnsContainer, pongContainer, dnsTesterContainer)
+
+	dt.DumpInspect(dnsContainer, pongContainer, dnsTesterContainer)
 
 	fmt.Println("wait for tests to finish")
 	dt.WaitForContainerToExit(dnsTesterContainer)
@@ -95,9 +91,7 @@ func main() {
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
 	<-sigChannel
 
-	dt.DumpContainerLogs(ctx, dnsContainer)
-	dt.DumpContainerLogs(ctx, dnsTesterContainer)
-	dt.DumpContainerLogs(ctx, pongContainer)
+	dt.DumpContainerLogs(dnsContainer, dnsTesterContainer, pongContainer)
 
 	fmt.Println("cleanup")
 	dt.Cleanup()
