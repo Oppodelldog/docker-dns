@@ -36,7 +36,7 @@ func main() {
 
 	fmt.Println("connecting to docker")
 	var err error
-	dt, err := dockertest.New()
+	dt, err := dockertest.NewSession()
 	if err != nil {
 		panic(err)
 	}
