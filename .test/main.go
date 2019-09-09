@@ -5,11 +5,10 @@ import (
 	"github.com/Oppodelldog/dockertest"
 	"io/ioutil"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
-	"syscall"
+	"time"
 )
 
 const goImage = "golang:1.13.0"
@@ -50,33 +49,29 @@ func main() {
 
 	fmt.Println("create containers")
 
-	dnsContainer, err := dt.NewContainer("dns-server", goImage, "go run dnsserver/cmd/main.go").
-		ConnectToNetwork(net).
-		SetIPAddress(dnsServerIP, net).
-		Mount(localPackagePath, imagePackagePath).
-		Mount(projectRoot, containerProjectRoot).
+	baseBuilder := dt.NewContainerBuilder().Connect(net).Mount(localPackagePath, imagePackagePath).Mount(projectRoot, containerProjectRoot).WorkingDir(workingDir).Image(goImage)
+
+	dnsContainer, err := baseBuilder.NewContainerBuilder().
+		Name("dns-server").
+		Cmd("go run dnsserver/cmd/main.go").
+		IPAddress(dnsServerIP, net).
 		Mount(dockerSocketPath, dockerSocketPath).
-		SetEnv("DOCKER_DNS_ALIAS_FILE", "dnsserver/data/alias").
-		SetWorkingDir(workingDir).
-		CreateContainer()
+		Env("DOCKER_DNS_ALIAS_FILE", "dnsserver/data/alias").
+		Build()
 	panicOnError(err)
 
-	dnsTesterContainer, err := dt.NewContainer("test", goImage, "go run .test/dnslookup/main.go").
-		ConnectToNetwork(net).
-		AddDns(dnsServerIP).
-		Mount(localPackagePath, imagePackagePath).
-		Mount(projectRoot, containerProjectRoot).
-		SetWorkingDir(workingDir).
-		CreateContainer()
+	dnsTesterContainer, err := baseBuilder.NewContainerBuilder().
+		Name("test").
+		Cmd("go run .test/dnslookup/main.go").
+		Dns(dnsServerIP).
+		Build()
 	panicOnError(err)
 
-	pongContainer, err := dt.NewContainer("pong", goImage, "go run .test/pong/main.go").
+	pongContainer, err := baseBuilder.NewContainerBuilder().
+		Name("pong").
+		Cmd("go run .test/pong/main.go").
 		UseOriginalName().
-		ConnectToNetwork(net).
-		Mount(localPackagePath, imagePackagePath).
-		Mount(projectRoot, containerProjectRoot).
-		SetWorkingDir(workingDir).
-		CreateContainer()
+		Build()
 	panicOnError(err)
 
 	fmt.Println("start containers")
@@ -85,11 +80,7 @@ func main() {
 	dt.DumpInspect(dnsContainer, pongContainer, dnsTesterContainer)
 
 	fmt.Println("wait for tests to finish")
-	dt.WaitForContainerToExit(dnsTesterContainer)
-
-	sigChannel := make(chan os.Signal)
-	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
-	<-sigChannel
+	<-dt.WaitForContainerToExit(dnsTesterContainer, time.Second*20)
 
 	dt.DumpContainerLogs(dnsContainer, dnsTesterContainer, pongContainer)
 
