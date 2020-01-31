@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/Oppodelldog/docker-dns.svg?branch=master)](https://travis-ci.com/Oppodelldog/docker-dns)
 # docker-dns
 > dns container for custom aliases
 
