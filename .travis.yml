@@ -17,4 +17,5 @@ services:
   - docker
 
 script:
+  - go mod edit -dropreplace "github.com/Oppodelldog/dockertest@v0.0.3"
   - go run .test/main.go
