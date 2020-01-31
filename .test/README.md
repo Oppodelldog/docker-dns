@@ -1,4 +1,6 @@
 # docker-dns
+[![Build Status](https://travis-ci.com/Oppodelldog/docker-dns.svg?branch=master)](https://travis-ci.com/Oppodelldog/docker-dns)
+
 ### Functional tests
 Functional tests currently must me checked manually. (see test/...)
 

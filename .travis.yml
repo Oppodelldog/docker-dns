@@ -1,0 +1,21 @@
+language: go
+
+go:
+  - 1.x
+
+os:
+  - linux
+
+env:
+  global:
+    - GO111MODULE=on
+    - GOFLAGS="-mod=readonly"
+    
+go_import_path: github.com/Oppodelldog/docker-dns
+
+services:
+  - docker
+
+script:
+  - docker pull golang:1.13.7
+  - go run .test/main.go

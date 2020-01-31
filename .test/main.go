@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const goImage = "golang:1.13.0"
+const goImage = "golang:1.13.7"
 const imagePackagePath = "/go/pkg"
 const containerProjectRoot = "/go/src/github.com/Oppodelldog"
 const workingDir = "/go/src/github.com/Oppodelldog/docker-dns"
