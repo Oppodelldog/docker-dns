@@ -25,9 +25,14 @@ type aliasFileLoader struct {
 
 func NewAliasFileLoader(ctx context.Context) *aliasFileLoader {
 	a := &aliasFileLoader{
-		aliases:         map[string]string{},
-		aliasFileFinder: filediscovery.New([]filediscovery.FileLocationProvider{filediscovery.EnvVarFilePathProvider(aliasFilePathEnvKey), filediscovery.ExecutableDirProvider("data")}),
-		lock:            sync.Mutex{},
+		aliases: map[string]string{},
+		aliasFileFinder: filediscovery.New(
+			[]filediscovery.FileLocationProvider{
+				filediscovery.EnvVarFilePathProvider(aliasFilePathEnvKey),
+				filediscovery.ExecutableDirProvider("data"),
+			},
+		),
+		lock: sync.Mutex{},
 	}
 
 	a.startAliasLoader(ctx)

@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/Oppodelldog/dockertest"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/Oppodelldog/dockertest"
 )
 
 const goImage = "golang:1.13.7"
@@ -49,7 +50,12 @@ func main() {
 
 	fmt.Println("create containers")
 
-	baseBuilder := dt.NewContainerBuilder().Connect(net).Mount(localPackagePath, imagePackagePath).Mount(projectRoot, containerProjectRoot).WorkingDir(workingDir).Image(goImage)
+	baseBuilder := dt.NewContainerBuilder().
+		Connect(net).
+		Mount(localPackagePath, imagePackagePath).
+		Mount(projectRoot, containerProjectRoot).
+		WorkingDir(workingDir).
+		Image(goImage)
 
 	dnsContainer, err := baseBuilder.NewContainerBuilder().
 		Name("dns-server").

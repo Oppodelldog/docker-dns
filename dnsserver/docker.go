@@ -3,7 +3,6 @@ package dnsserver
 import (
 	"context"
 
-	"github.com/Oppodelldog/docker-dns/network"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
@@ -42,7 +41,7 @@ func (a *dockerClientAdapter) GetRunningContainers() ([]types.Container, error) 
 func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
 
 	var networkIDs []string
-	myIps, err := network.GetIps()
+	myIps, err := getIps()
 	if err != nil {
 		return nil, err
 	}

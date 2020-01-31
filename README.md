@@ -23,13 +23,13 @@ The rest should be obvious from docker-compose.yaml or the go code.
 ### Restrictions
 
 **Restrictions for the docker-compose setup:**
-* your need to give the DNS service a static ip
-* so you need a network as well
+* you need to attach your docker services via IP address to this DNS Service
+* so you need to define a docker network
 
 
 ### Tests
 Since this project was a just a quick try, there are no unit tests yet.
-But to hold the code stable there is two functional test beds, for docker and docker-compose.
+But to hold the code stable there is at least a functional test.
 * [functional tests](test/README.md)
 
 ### Go simply rocks

@@ -1,8 +1,8 @@
-package network
+package dnsserver
 
 import "net"
 
-func GetIps() ([]net.IP, error) {
+func getIps() ([]net.IP, error) {
 	var ips []net.IP
 	interfaces, err := net.Interfaces()
 	if err != nil {
