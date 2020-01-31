@@ -2,13 +2,16 @@
 [![Build Status](https://travis-ci.com/Oppodelldog/docker-dns.svg?branch=master)](https://travis-ci.com/Oppodelldog/docker-dns)
 
 ### Functional tests
-Functional tests currently must me checked manually. (see test/...)
+The functional test is orchestrated using [dockertest](https://github.com/Oppodelldog/dockertest)
+Implementation of the test: [main.go](main.go) 
 
-The test script and the docker-compose environment simulate the same behavior:
+#### Test Setup
 
-* **dnstester** is asking for custom domain names that could not be resolved by the docker built-in dns facility
-* sice the **pong** is discovered by the **dnsserver**
-* **dnsserver** will answer all dns requests coming from **dnstester**
+The test is made of three docker services:
+
+* **pong** service is doing nothing, just a stub waiting to receive a ping
+* **dnstester** service is trying to connect to pong using custom dns-names.
+* **dnsserver** will answer all dns requests coming from **dnstester** and return pongs ip
 
 Execute tests
 ```bash
