@@ -18,7 +18,7 @@ var ErrGettingContainerByID = errors.New("error while getting container by ID")
 var ErrNoContainerFoundForID = errors.New("no container found")
 
 type DNSUpdater struct {
-	dockerClientAdapter *DockerClientAdapter
+	dockerClientAdapter DockerClientAdapter
 	dockerClient        *client.Client
 	ctx                 context.Context
 	dnsRegistry         DNSRegistrar
@@ -26,10 +26,10 @@ type DNSUpdater struct {
 
 func NewDNSUpdater(ctx context.Context,
 	dockerClient *client.Client,
-	dockerClientAdapter *DockerClientAdapter,
+	dockerClientAdapter DockerClientAdapter,
 	dnsRegistry DNSRegistrar,
-) *DNSUpdater {
-	u := &DNSUpdater{
+) DNSUpdater {
+	u := DNSUpdater{
 		dockerClientAdapter: dockerClientAdapter,
 		dockerClient:        dockerClient,
 		ctx:                 ctx,
@@ -41,13 +41,13 @@ func NewDNSUpdater(ctx context.Context,
 	return u
 }
 
-func (u *DNSUpdater) start() {
+func (u DNSUpdater) start() {
 	go func() {
 		u.startEventListener()
 	}()
 }
 
-func (u *DNSUpdater) startEventListener() {
+func (u DNSUpdater) startEventListener() {
 	evtCh, errCh := u.registerContainerEvents()
 
 	for {
@@ -69,7 +69,7 @@ func (u *DNSUpdater) startEventListener() {
 	}
 }
 
-func (u *DNSUpdater) registerContainerEvents() (<-chan events.Message, <-chan error) {
+func (u DNSUpdater) registerContainerEvents() (<-chan events.Message, <-chan error) {
 	eventFilter := filters.NewArgs()
 	eventFilter.Add("type", "container")
 
@@ -81,7 +81,7 @@ func (u *DNSUpdater) registerContainerEvents() (<-chan events.Message, <-chan er
 	return evtCh, errCh
 }
 
-func (u *DNSUpdater) addContainerToDNS(e events.Message) {
+func (u DNSUpdater) addContainerToDNS(e events.Message) {
 	ip, err := u.getContainerIP(e.Actor.ID)
 	if err != nil {
 		logrus.Errorf("could not determine container ip: %v", err)
@@ -99,7 +99,7 @@ func (u *DNSUpdater) addContainerToDNS(e events.Message) {
 	u.dnsRegistry.Register(containerName, ip)
 }
 
-func (u *DNSUpdater) removeContainerFromDNS(e events.Message) {
+func (u DNSUpdater) removeContainerFromDNS(e events.Message) {
 	containerName, err := u.getContainerName(e.Actor.ID)
 	if err != nil {
 		logrus.Errorf("could not determine container name: %v", err)
@@ -111,7 +111,7 @@ func (u *DNSUpdater) removeContainerFromDNS(e events.Message) {
 	u.dnsRegistry.Unregister(containerName)
 }
 
-func (u *DNSUpdater) getContainerName(containerID string) (string, error) {
+func (u DNSUpdater) getContainerName(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrGettingContainerName, err)
@@ -120,7 +120,7 @@ func (u *DNSUpdater) getContainerName(containerID string) (string, error) {
 	return container.Names[0], nil
 }
 
-func (u *DNSUpdater) getContainerIP(containerID string) (string, error) {
+func (u DNSUpdater) getContainerIP(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrGettingContainerIP, err)
@@ -131,7 +131,7 @@ func (u *DNSUpdater) getContainerIP(containerID string) (string, error) {
 	return ips[len(ips)-1], nil
 }
 
-func (u *DNSUpdater) getContainerByID(containerID string) (types.Container, error) {
+func (u DNSUpdater) getContainerByID(containerID string) (types.Container, error) {
 	ctx := context.Background()
 	containerFilter := filters.NewArgs()
 	containerFilter.Add("id", containerID)

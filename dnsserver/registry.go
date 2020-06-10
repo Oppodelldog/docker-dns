@@ -20,26 +20,21 @@ type (
 	IPResolver interface {
 		LookupIP(string) (string, bool)
 	}
-	DNSRegistry interface {
-		DNSRegisterer
-		DNSUnRegisterer
-		IPResolver
-	}
 )
 
-//NewDNSRegistry returns a new instance of DNRegistry.
+//NewDNSRegistry returns a new instance of DNSRegistry.
 func NewDNSRegistry(aliasProvider AliasProvider) DNSRegistry {
-	return &dnsRegistry{
+	return DNSRegistry{
 		ipAddressByContainerName: map[string]string{},
-		lock:                     sync.Mutex{},
+		lock:                     &sync.Mutex{},
 		aliasProvider:            aliasProvider,
 	}
 }
 
 type (
-	dnsRegistry struct {
+	DNSRegistry struct {
 		ipAddressByContainerName map[string]string
-		lock                     sync.Mutex
+		lock                     *sync.Mutex
 		aliasProvider            AliasProvider
 	}
 	AliasProvider interface {
@@ -47,7 +42,7 @@ type (
 	}
 )
 
-func (r *dnsRegistry) LookupIP(domain string) (string, bool) {
+func (r DNSRegistry) LookupIP(domain string) (string, bool) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -62,22 +57,23 @@ func (r *dnsRegistry) LookupIP(domain string) (string, bool) {
 	return "", false
 }
 
-func (r *dnsRegistry) Unregister(containerName string) {
+func (r DNSRegistry) Unregister(containerName string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	delete(r.ipAddressByContainerName, containerName)
 }
 
-func (r *dnsRegistry) Register(containerName string, ip string) {
+func (r DNSRegistry) Register(containerName string, ip string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	r.ipAddressByContainerName[containerName] = ip
 }
 
-func NewContainerRegistry(registerer DNSRegistrar) DNSRegistrar {
-	return &ContainerDNSRegistry{
+// NewContainerRegistry creates a new instance of ContainerDNSRegistry.
+func NewContainerRegistry(registerer DNSRegistrar) ContainerDNSRegistry {
+	return ContainerDNSRegistry{
 		registry: registerer,
 	}
 }
@@ -86,18 +82,19 @@ type ContainerDNSRegistry struct {
 	registry DNSRegistrar
 }
 
-func (r *ContainerDNSRegistry) Unregister(containerName string) {
+func (r ContainerDNSRegistry) Unregister(containerName string) {
 	dnsContainerName := r.normalizeContainerName(containerName)
 
 	r.registry.Unregister(dnsContainerName)
 }
 
-func (r *ContainerDNSRegistry) Register(containerName string, ip string) {
+func (r ContainerDNSRegistry) Register(containerName string, ip string) {
 	dnsContainerName := r.normalizeContainerName(containerName)
 
 	r.registry.Register(dnsContainerName, ip)
 }
-func (r *ContainerDNSRegistry) normalizeContainerName(containerName string) string {
+
+func (r ContainerDNSRegistry) normalizeContainerName(containerName string) string {
 	var dnsContainerName string
 
 	parts := strings.Split(containerName, "_")

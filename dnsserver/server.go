@@ -13,13 +13,43 @@ import (
 
 const dnsPort = 53
 
-type dnsHandler struct {
+type DNSHandler struct {
 	ipResolver IPResolver
 }
 
-func newDNSHandler(ipResolver IPResolver) dns.Handler {
-	return &dnsHandler{
+func newDNSHandler(ipResolver IPResolver) DNSHandler {
+	return DNSHandler{
 		ipResolver: ipResolver,
+	}
+}
+
+//ServeDNS handles a dns request.
+func (h DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+	msg := dns.Msg{}
+	msg.SetReply(r)
+
+	if r.Question[0].Qtype == dns.TypeA {
+		msg.Authoritative = true
+		domain := msg.Question[0].Name
+
+		address, ok := h.ipResolver.LookupIP(domain)
+		if ok {
+			logrus.Debugf("address found for %s", domain)
+
+			const ttl = 60
+
+			msg.Answer = append(msg.Answer, &dns.A{
+				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl},
+				A:   net.ParseIP(address),
+			})
+		} else {
+			logrus.Debugf("address not found for %s", domain)
+		}
+	}
+
+	err := w.WriteMsg(&msg)
+	if err != nil {
+		logrus.Errorf("Error writing DNS response: %v", err)
 	}
 }
 
@@ -54,34 +84,4 @@ func spawnServer(ipResolver IPResolver) *dns.Server {
 	}()
 
 	return srv
-}
-
-//ServeDNS handles a dns request.
-func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
-	msg := dns.Msg{}
-	msg.SetReply(r)
-
-	if r.Question[0].Qtype == dns.TypeA {
-		msg.Authoritative = true
-		domain := msg.Question[0].Name
-
-		address, ok := h.ipResolver.LookupIP(domain)
-		if ok {
-			logrus.Debugf("address found for %s", domain)
-
-			const ttl = 60
-
-			msg.Answer = append(msg.Answer, &dns.A{
-				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl},
-				A:   net.ParseIP(address),
-			})
-		} else {
-			logrus.Debugf("address not found for %s", domain)
-		}
-	}
-
-	err := w.WriteMsg(&msg)
-	if err != nil {
-		logrus.Errorf("Error writing DNS response: %v", err)
-	}
 }

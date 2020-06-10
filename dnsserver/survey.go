@@ -12,15 +12,15 @@ type ContainerDNSSurvey struct {
 
 func NewContainerDNSSurvey(dnsRegisterer DNSRegisterer,
 	runningContainerGetter RunningContainersGetter,
-	networkIPsGetter NetworkIPsGetter) *ContainerDNSSurvey {
-	return &ContainerDNSSurvey{
+	networkIPsGetter NetworkIPsGetter) ContainerDNSSurvey {
+	return ContainerDNSSurvey{
 		networkIPsGetter:       networkIPsGetter,
 		dnsRegisterer:          dnsRegisterer,
 		runningContainerGetter: runningContainerGetter,
 	}
 }
 
-func (s *ContainerDNSSurvey) Run() {
+func (s ContainerDNSSurvey) Run() {
 	containers, err := s.runningContainerGetter.GetRunningContainers()
 	if err != nil {
 		panic(err)
