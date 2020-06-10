@@ -27,7 +27,7 @@ type (
 	}
 )
 
-//NewDNSRegistry returns a new instance of DNRegistry
+//NewDNSRegistry returns a new instance of DNRegistry.
 func NewDNSRegistry(aliasProvider AliasProvider) DNSRegistry {
 	return &dnsRegistry{
 		ipAddressByContainerName: map[string]string{},
@@ -50,6 +50,7 @@ type (
 func (r *dnsRegistry) LookupIP(domain string) (string, bool) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
+
 	if alias, ok := r.aliasProvider.GetAliasForDomain(domain); ok {
 		domain = alias
 	}
@@ -98,11 +99,15 @@ func (r *ContainerDNSRegistry) Register(containerName string, ip string) {
 }
 func (r *ContainerDNSRegistry) normalizeContainerName(containerName string) string {
 	var dnsContainerName string
+
 	parts := strings.Split(containerName, "_")
-	if len(parts) < 2 {
+
+	const requiredValues = 2
+	if len(parts) < requiredValues {
 		if containerName[0] == '/' {
 			containerName = containerName[1:]
 		}
+
 		dnsContainerName = containerName
 	} else {
 		dnsContainerName = parts[1]

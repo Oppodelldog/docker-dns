@@ -1,13 +1,14 @@
 BUILD_FOLDER = ".build-artifacts"
 
-setup: ## Install tools
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.17.1
-	mkdir .bin && mv bin/golangci-lint .bin/golangci-lint && rm -rf bin
+ensure-bin:
+	[ -d .bin ] || mkdir .bin
 
-lint: ## Run all the linters
-	golangci-lint help linters
-	golangci-lint run --enable=goimports --enable=gofmt --enable=gocyclo --enable=nakedret --enable=scopelint --enable=stylecheck
-	
+setup: ensure-bin ## Install tools
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.27.0
+	mkdir .bin || mv bin/golangci-lint .bin/golangci-lint && rm -rf bin
+
+lint: ## Run the linters
+	golangci-lint run
 
 fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done

@@ -3,7 +3,7 @@ module github.com/Oppodelldog/docker-dns
 go 1.13
 
 require (
-	github.com/Oppodelldog/dockertest v0.0.3 // indirect
+	github.com/Oppodelldog/dockertest v0.0.3
 	github.com/Oppodelldog/filediscovery v0.3.0
 	github.com/docker/docker v1.13.1
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect

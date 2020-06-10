@@ -4,6 +4,7 @@ import "net"
 
 func getIps() ([]net.IP, error) {
 	var ips []net.IP
+
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
@@ -15,9 +16,8 @@ func getIps() ([]net.IP, error) {
 			return nil, err
 		}
 
-		for _, addr := range addrs {
-
-			switch v := addr.(type) {
+		for i := range addrs {
+			switch v := addrs[i].(type) {
 			case *net.IPNet:
 				ips = append(ips, v.IP)
 			case *net.IPAddr:

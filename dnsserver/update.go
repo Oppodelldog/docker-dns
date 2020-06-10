@@ -2,6 +2,7 @@ package dnsserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/docker/docker/api/types"
@@ -11,14 +12,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var ErrGettingContainerName = errors.New("error getting container name")
+var ErrGettingContainerIP = errors.New("error getting container IP")
+var ErrGettingContainerByID = errors.New("error while getting container by ID")
+var ErrNoContainerFoundForID = errors.New("no container found")
+
 type DNSUpdater struct {
-	dockerClientAdapter *dockerClientAdapter
+	dockerClientAdapter *DockerClientAdapter
 	dockerClient        *client.Client
 	ctx                 context.Context
 	dnsRegistry         DNSRegistrar
 }
 
-func NewDNSUpdater(ctx context.Context, dockerClient *client.Client, dockerClientAdapter *dockerClientAdapter, dnsRegistry DNSRegistrar) *DNSUpdater {
+func NewDNSUpdater(ctx context.Context,
+	dockerClient *client.Client,
+	dockerClientAdapter *DockerClientAdapter,
+	dnsRegistry DNSRegistrar,
+) *DNSUpdater {
 	u := &DNSUpdater{
 		dockerClientAdapter: dockerClientAdapter,
 		dockerClient:        dockerClient,
@@ -38,7 +48,6 @@ func (u *DNSUpdater) start() {
 }
 
 func (u *DNSUpdater) startEventListener() {
-
 	evtCh, errCh := u.registerContainerEvents()
 
 	for {
@@ -63,6 +72,7 @@ func (u *DNSUpdater) startEventListener() {
 func (u *DNSUpdater) registerContainerEvents() (<-chan events.Message, <-chan error) {
 	eventFilter := filters.NewArgs()
 	eventFilter.Add("type", "container")
+
 	options := types.EventsOptions{
 		Filters: eventFilter,
 	}
@@ -83,7 +93,9 @@ func (u *DNSUpdater) addContainerToDNS(e events.Message) {
 		logrus.Errorf("could not determine container name: %v", err)
 		return
 	}
+
 	logrus.Infof("adding container %s due to (%s) event", containerName, e.Action)
+
 	u.dnsRegistry.Register(containerName, ip)
 }
 
@@ -93,6 +105,7 @@ func (u *DNSUpdater) removeContainerFromDNS(e events.Message) {
 		logrus.Errorf("could not determine container name: %v", err)
 		return
 	}
+
 	logrus.Infof("removing container %s due to (%s) event", containerName, e.Action)
 
 	u.dnsRegistry.Unregister(containerName)
@@ -101,7 +114,7 @@ func (u *DNSUpdater) removeContainerFromDNS(e events.Message) {
 func (u *DNSUpdater) getContainerName(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
-		return "", fmt.Errorf("error getting container name: %v", err)
+		return "", fmt.Errorf("%w: %v", ErrGettingContainerName, err)
 	}
 
 	return container.Names[0], nil
@@ -110,7 +123,7 @@ func (u *DNSUpdater) getContainerName(containerID string) (string, error) {
 func (u *DNSUpdater) getContainerIP(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
-		return "", fmt.Errorf("error getting container IP: %v", err)
+		return "", fmt.Errorf("%w: %v", ErrGettingContainerIP, err)
 	}
 
 	ips := u.dockerClientAdapter.GetContainerNetworkIps(container)
@@ -122,17 +135,24 @@ func (u *DNSUpdater) getContainerByID(containerID string) (types.Container, erro
 	ctx := context.Background()
 	containerFilter := filters.NewArgs()
 	containerFilter.Add("id", containerID)
+
 	options := types.ContainerListOptions{
 		Filters: containerFilter,
 		All:     true,
 	}
+
 	containers, err := u.dockerClient.ContainerList(ctx, options)
 	if err != nil {
-		return types.Container{}, fmt.Errorf("error while getting container by ID using container list: %v", err)
+		return types.Container{}, fmt.Errorf("%w using container list: %v", ErrGettingContainerByID, err)
 	}
 
 	if len(containers) == 0 {
-		return types.Container{}, fmt.Errorf("error while getting container by ID: no container found for id '%s'", containerID)
+		return types.Container{},
+			fmt.Errorf(
+				"%w for id '%s'",
+				ErrNoContainerFoundForID,
+				containerID,
+			)
 	}
 
 	return containers[0], nil

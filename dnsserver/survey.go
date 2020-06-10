@@ -32,6 +32,7 @@ func (s *ContainerDNSSurvey) Run() {
 			logrus.Debugf("skipping container without ip '%s'", container.ID)
 			continue
 		}
+
 		for _, containerName := range container.Names {
 			ip := ips[len(ips)-1]
 			s.dnsRegisterer.Register(containerName, ip)

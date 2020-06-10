@@ -17,5 +17,5 @@ services:
   - docker
 
 script:
-  - docker pull golang:1.13.7
+  - docker pull golang:1.14.4
   - go run .test/main.go

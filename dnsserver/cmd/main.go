@@ -14,6 +14,7 @@ import (
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
+
 	ctx := getContextCanceledByInterrupt()
 
 	dockerClient, dockerClientDefer := getDockerClient()
@@ -44,6 +45,7 @@ func getDockerClient() (*client.Client, func()) {
 
 func getContextCanceledByInterrupt() context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	go func() {
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals, os.Interrupt, syscall.SIGTERM)

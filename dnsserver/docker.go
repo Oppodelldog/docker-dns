@@ -18,18 +18,20 @@ type (
 	NetworkIPsGetter interface {
 		GetContainerNetworkIps(container types.Container) []string
 	}
-	dockerClientAdapter struct {
+	DockerClientAdapter struct {
 		dockerClient *client.Client
 	}
 )
 
-func NewDockerClientAdapter(dockerClient *client.Client) *dockerClientAdapter {
-	return &dockerClientAdapter{
+// NewDockerClientAdapter returns a new *DockerClientAdapter.
+func NewDockerClientAdapter(dockerClient *client.Client) *DockerClientAdapter {
+	return &DockerClientAdapter{
 		dockerClient: dockerClient,
 	}
 }
 
-func (a *dockerClientAdapter) GetRunningContainers() ([]types.Container, error) {
+// GetRunningContainers returns a list of running containers.
+func (a *DockerClientAdapter) GetRunningContainers() ([]types.Container, error) {
 	containers, err := a.dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: false})
 	if err != nil {
 		return nil, err
@@ -38,13 +40,14 @@ func (a *dockerClientAdapter) GetRunningContainers() ([]types.Container, error) 
 	return containers, nil
 }
 
-func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
-
+func (a *DockerClientAdapter) getNetworkIDs() ([]string, error) {
 	var networkIDs []string
+
 	myIps, err := getIps()
 	if err != nil {
 		return nil, err
 	}
+
 	containers, err := a.GetRunningContainers()
 	if err != nil {
 		return nil, err
@@ -63,14 +66,16 @@ func (a *dockerClientAdapter) getNetworkIDs() ([]string, error) {
 	return networkIDs, nil
 }
 
-func (a *dockerClientAdapter) GetContainerNetworkIps(container types.Container) []string {
+func (a *DockerClientAdapter) GetContainerNetworkIps(container types.Container) []string {
 	var ips []string
+
 	networkIDs, err := a.getNetworkIDs()
 	if err != nil {
 		logrus.Errorf("error retrieving all NetworkIDs: %v", err)
 
 		return nil
 	}
+
 	for _, containerNetwork := range container.NetworkSettings.Networks {
 		for _, myNetwork := range networkIDs {
 			if containerNetwork.NetworkID == myNetwork {

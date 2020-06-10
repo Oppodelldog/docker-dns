@@ -23,9 +23,8 @@ func newDNSHandler(ipResolver IPResolver) dns.Handler {
 	}
 }
 
-// Run starts the DNS server which will answer requests using the given IPResolver
+// Run starts the DNS server which will answer requests using the given IPResolver.
 func Run(ctx context.Context, ipResolver IPResolver) {
-
 	s := spawnServer(ipResolver)
 
 	<-ctx.Done()
@@ -43,6 +42,7 @@ func stopServer(s *dns.Server) {
 
 func spawnServer(ipResolver IPResolver) *dns.Server {
 	logrus.Infof("starting dns server (udp) on :%v\n", dnsPort)
+
 	srv := &dns.Server{Addr: ":" + strconv.Itoa(dnsPort), Net: "udp"}
 	srv.Handler = newDNSHandler(ipResolver)
 
@@ -56,20 +56,23 @@ func spawnServer(ipResolver IPResolver) *dns.Server {
 	return srv
 }
 
-//ServeDNS handles a dns request
+//ServeDNS handles a dns request.
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	msg := dns.Msg{}
 	msg.SetReply(r)
-	switch r.Question[0].Qtype {
-	case dns.TypeA:
+
+	if r.Question[0].Qtype == dns.TypeA {
 		msg.Authoritative = true
 		domain := msg.Question[0].Name
 
 		address, ok := h.ipResolver.LookupIP(domain)
 		if ok {
 			logrus.Debugf("address found for %s", domain)
+
+			const ttl = 60
+
 			msg.Answer = append(msg.Answer, &dns.A{
-				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
+				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl},
 				A:   net.ParseIP(address),
 			})
 		} else {
