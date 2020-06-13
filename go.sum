@@ -1,7 +1,5 @@
 github.com/Microsoft/go-winio v0.4.14 h1:+hMXMk01us9KgxGb7ftKQt2Xpf5hH/yky+TDA+qxleU=
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
-github.com/Oppodelldog/dockertest v0.0.3 h1:ZsS7/bb8rPLPke/4ZqFAOyZOu238gkigwjcptwC9Crk=
-github.com/Oppodelldog/dockertest v0.0.3/go.mod h1:zjzXCSMQbwBO9fiRFE1k8wi49ZilY+vF3tnq/8V5jtA=
 github.com/Oppodelldog/filediscovery v0.3.0 h1:oYbASl7s5M5PauThblMgZpB/FVNJb85Z6megMDmWpOE=
 github.com/Oppodelldog/filediscovery v0.3.0/go.mod h1:W/ChJxck0x9Nj4RbASyM5my8dZXZNRtsHlC8cnssLH4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -25,8 +23,6 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/miekg/dns v1.1.16 h1:iMEQ/IVHxPTtx2Q07JP/k4CKRvSjiAZjZ0hnhgYEDmE=
 github.com/miekg/dns v1.1.16/go.mod h1:YNV562EiewvSmpCB6/W4c6yqjK7Z+M/aIS1JHsIVeg8=
-github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
-github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2iki3E3Ii+WN7gQ=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
