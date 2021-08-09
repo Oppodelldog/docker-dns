@@ -86,9 +86,9 @@ func main() {
 	dt.DumpInspect(dnsContainer, pongContainer, dnsTesterContainer)
 
 	fmt.Println("wait for tests to finish")
-	<-dt.WaitForContainerToExit(dnsTesterContainer, time.Second*20)
+	<-dt.NotifyContainerExit(dnsTesterContainer, time.Second*20)
 
-	dt.DumpContainerLogs(dnsContainer, dnsTesterContainer, pongContainer)
+	dt.DumpContainerHealthCheckLogsToDir(dnsContainer, dnsTesterContainer, pongContainer)
 
 	fmt.Println("cleanup")
 	dt.Cleanup()
