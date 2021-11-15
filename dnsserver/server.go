@@ -23,7 +23,7 @@ func newDNSHandler(ipResolver IPResolver) DNSHandler {
 	}
 }
 
-//ServeDNS handles a dns request.
+// ServeDNS handles a dns request.
 func (h DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	msg := dns.Msg{}
 	msg.SetReply(r)

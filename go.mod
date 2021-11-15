@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
-	github.com/Oppodelldog/dockertest v0.0.10
+	github.com/Oppodelldog/dockertest v0.0.12-0.20211115230042-d0e090defa50
 	github.com/Oppodelldog/filediscovery v0.3.0
 	github.com/docker/docker v1.13.1
 	github.com/miekg/dns v1.1.43

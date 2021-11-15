@@ -48,6 +48,8 @@ func main() {
 		panic(err)
 	}
 
+	dt.CleanupRemains()
+
 	dt.SetLogDir(path.Join(hostDir, ".test", "logs"))
 	fmt.Println("create network")
 
@@ -75,14 +77,14 @@ func main() {
 
 	dnsTesterContainer, err := baseBuilder.NewContainerBuilder().
 		Name("test").
-		Cmd("go run .test/dnslookup/main.go").
+		Cmd("go run test/dnslookup/main.go").
 		Dns(dnsServerIP).
 		Build()
 	panicOnError(err)
 
 	pongContainer, err := baseBuilder.NewContainerBuilder().
 		Name("pong").
-		Cmd("go run .test/pong/main.go").
+		Cmd("go run test/pong/main.go").
 		UseOriginalName().
 		Build()
 	panicOnError(err)
@@ -97,7 +99,7 @@ func main() {
 
 	<-dt.NotifyContainerExit(dnsTesterContainer, waitTimeout)
 
-	dt.DumpContainerHealthCheckLogsToDir(dnsContainer, dnsTesterContainer, pongContainer)
+	dt.DumpContainerLogsToDir(dnsContainer, dnsTesterContainer, pongContainer)
 
 	fmt.Println("cleanup")
 

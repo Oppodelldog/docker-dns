@@ -22,7 +22,7 @@ type (
 	}
 )
 
-//NewDNSRegistry returns a new instance of DNSRegistry.
+// NewDNSRegistry returns a new instance of DNSRegistry.
 func NewDNSRegistry(aliasProvider AliasProvider) DNSRegistry {
 	return DNSRegistry{
 		ipAddressByContainerName: map[string]string{},

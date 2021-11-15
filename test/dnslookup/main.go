@@ -19,6 +19,10 @@ const successMessage = "all tests successful"
 const filePerm = 0655
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	f, err := os.OpenFile(dnsTesterLog, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, filePerm)
 	if err != nil {
 		panic(err)
@@ -31,6 +35,7 @@ func main() {
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
 	ctx, cancel := context.WithTimeout(context.Background(), getTimeoutFromEnv())
+	defer cancel()
 
 	testSuccess := make(chan bool)
 	go lookup(ctx, f, testSuccess, "pong", "regular docker name, basic docker name resolving, should resolve without of docker-dns") //nolint:lll
@@ -47,10 +52,12 @@ func main() {
 		case sig := <-signals:
 			writeTestOutputf(f, "received signal %v", sig)
 			cancel()
-			os.Exit(0)
+
+			return 0
 		case <-ctx.Done():
 			writeTestOutputf(f, "test timed out")
-			os.Exit(1)
+
+			return 1
 		case <-testSuccess:
 			noTestsSuccessful++
 			writeTestOutputf(f, "%v of %v tests successful", noTestsSuccessful, numberOfTests)
@@ -58,7 +65,7 @@ func main() {
 			if noTestsSuccessful == numberOfTests {
 				writeTestOutputf(f, successMessage)
 
-				return
+				return 0
 			}
 		}
 	}
