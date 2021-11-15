@@ -1,11 +1,8 @@
 BUILD_FOLDER = ".build-artifacts"
 
-ensure-bin:
-	[ -d .bin ] || mkdir .bin
-
-setup: ensure-bin ## Install tools
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.27.0
-	mkdir .bin || mv bin/golangci-lint .bin/golangci-lint && rm -rf bin
+setup: ## Install tools
+	go install golang.org/x/tools/cmd/goimports
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
 
 lint: ## Run the linters
 	golangci-lint run

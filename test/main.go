@@ -26,24 +26,31 @@ const dockerSocketPath = "/var/run/docker.sock"
 
 const dnsTesterOutputFile = "dns-tester.log"
 
+const waitTimeout = time.Second * 20
+
 func main() {
-	hostDir, _ := os.Getwd()
-	projectRoot := filepath.Dir(hostDir)
-	goPath, hasGoPath := os.LookupEnv("GOPATH")
+	var (
+		hostDir, _        = os.Getwd()
+		projectRoot       = filepath.Dir(hostDir)
+		goPath, hasGoPath = os.LookupEnv("GOPATH")
+	)
+
 	if !hasGoPath {
 		panic("did not find GOPATH, it's required for caching modules")
 	}
+
 	localPackagePath := path.Join(goPath, "pkg")
 
 	fmt.Println("connecting to docker")
-	var err error
+
 	dt, err := dockertest.NewSession()
 	if err != nil {
 		panic(err)
 	}
-	dt.SetLogDir(path.Join(hostDir, ".test", "logs"))
 
+	dt.SetLogDir(path.Join(hostDir, ".test", "logs"))
 	fmt.Println("create network")
+
 	networkBuilder := dt.CreateSimpleNetwork(networkName, subNet, ipRange)
 	net, err := networkBuilder.Create()
 	panicOnError(err)
@@ -81,19 +88,23 @@ func main() {
 	panicOnError(err)
 
 	fmt.Println("start containers")
-	err = dt.StartContainer(dnsContainer, pongContainer, dnsTesterContainer)
+
+	panicOnError(dt.StartContainer(dnsContainer, pongContainer, dnsTesterContainer))
 
 	dt.DumpInspect(dnsContainer, pongContainer, dnsTesterContainer)
 
 	fmt.Println("wait for tests to finish")
-	<-dt.NotifyContainerExit(dnsTesterContainer, time.Second*20)
+
+	<-dt.NotifyContainerExit(dnsTesterContainer, waitTimeout)
 
 	dt.DumpContainerHealthCheckLogsToDir(dnsContainer, dnsTesterContainer, pongContainer)
 
 	fmt.Println("cleanup")
+
 	dt.Cleanup()
 
 	fmt.Println("check test results")
+
 	res := checkResults()
 	os.Exit(res)
 }
@@ -105,14 +116,16 @@ func checkResults() int {
 	}
 
 	if strings.Contains(string(content), "all tests successful") {
-		fmt.Println("Test successfull")
+		fmt.Println("Test successful")
 		fmt.Println("-------------------------------")
 		fmt.Println(string(content))
+
 		return 0
 	} else {
 		fmt.Println("Test failed")
 		fmt.Println("-------------------------------")
 		fmt.Println(string(content))
+
 		return 1
 	}
 }

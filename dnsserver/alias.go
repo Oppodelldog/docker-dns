@@ -55,6 +55,7 @@ func (l *AliasFileLoader) startAliasLoader(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				logrus.Info("Stopping Alias loader")
+
 				return
 			case <-ticker.C:
 				l.loadAliasesFromFile()
@@ -69,6 +70,7 @@ func (l *AliasFileLoader) loadAliasesFromFile() {
 	aliasFilePath, err := l.aliasFileFinder.Discover("alias")
 	if err != nil {
 		logrus.Errorf("Could not find alias file: %v\n", err)
+
 		return
 	}
 
@@ -77,6 +79,7 @@ func (l *AliasFileLoader) loadAliasesFromFile() {
 	content, err := ioutil.ReadFile(aliasFilePath)
 	if err != nil {
 		logrus.Errorf("Could not load aliases: %v\n", err)
+
 		return
 	}
 

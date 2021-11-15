@@ -20,4 +20,7 @@ linters:
     - typecheck
     - gochecknoglobals
     - testpackage
+    - exhaustivestruct
+    - funlen
+    - forbidigo
   fast: false

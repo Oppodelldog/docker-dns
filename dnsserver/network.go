@@ -1,19 +1,22 @@
 package dnsserver
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 func getIps() ([]net.IP, error) {
 	var ips []net.IP
 
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot get ips: %w", err)
 	}
 
 	for _, i := range interfaces {
 		addrs, err := i.Addrs()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot get addrs: %w", err)
 		}
 
 		for i := range addrs {

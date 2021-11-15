@@ -30,6 +30,7 @@ func (s ContainerDNSSurvey) Run() {
 		ips := s.networkIPsGetter.GetContainerNetworkIps(container)
 		if len(ips) == 0 {
 			logrus.Debugf("skipping container without ip '%s'", container.ID)
+
 			continue
 		}
 

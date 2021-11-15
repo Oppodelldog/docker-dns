@@ -2,6 +2,7 @@ package dnsserver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -34,7 +35,7 @@ func NewDockerClientAdapter(dockerClient *client.Client) DockerClientAdapter {
 func (a DockerClientAdapter) GetRunningContainers() ([]types.Container, error) {
 	containers, err := a.dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: false})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot get running containers: %w", err)
 	}
 
 	return containers, nil

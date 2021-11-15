@@ -54,6 +54,7 @@ func (u DNSUpdater) startEventListener() {
 		select {
 		case <-errCh:
 			logrus.Errorf("error in docker event loop, stopping Docker DNS Survey")
+
 			return
 		case e := <-evtCh:
 			switch e.Action {
@@ -64,6 +65,7 @@ func (u DNSUpdater) startEventListener() {
 			}
 		case <-u.ctx.Done():
 			logrus.Info("Stopping Docker DNS Survey")
+
 			return
 		}
 	}
@@ -85,12 +87,14 @@ func (u DNSUpdater) addContainerToDNS(e events.Message) {
 	ip, err := u.getContainerIP(e.Actor.ID)
 	if err != nil {
 		logrus.Errorf("could not determine container ip: %v", err)
+
 		return
 	}
 
 	containerName, err := u.getContainerName(e.Actor.ID)
 	if err != nil {
 		logrus.Errorf("could not determine container name: %v", err)
+
 		return
 	}
 

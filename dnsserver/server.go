@@ -47,8 +47,7 @@ func (h DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		}
 	}
 
-	err := w.WriteMsg(&msg)
-	if err != nil {
+	if err := w.WriteMsg(&msg); err != nil {
 		logrus.Errorf("Error writing DNS response: %v", err)
 	}
 }
@@ -63,8 +62,7 @@ func Run(ctx context.Context, ipResolver IPResolver) {
 }
 
 func stopServer(s *dns.Server) {
-	err := s.Shutdown()
-	if err != nil {
+	if err := s.Shutdown(); err != nil {
 		logrus.Errorf("Failed to gracefully shutdown udp listener %s\n", err.Error())
 		os.Exit(1)
 	}

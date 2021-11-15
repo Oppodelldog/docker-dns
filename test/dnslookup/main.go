@@ -16,9 +16,10 @@ const envTimeoutKey = "TIMEOUT_IN_SECONDS"
 const defaultTimeout = time.Minute * 2
 const dnsTesterLog = "dns-tester.log"
 const successMessage = "all tests successful"
+const filePerm = 0655
 
 func main() {
-	f, err := os.OpenFile(dnsTesterLog, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0655)
+	f, err := os.OpenFile(dnsTesterLog, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, filePerm)
 	if err != nil {
 		panic(err)
 	}
@@ -56,6 +57,7 @@ func main() {
 		default:
 			if noTestsSuccessful == numberOfTests {
 				writeTestOutputf(f, successMessage)
+
 				return
 			}
 		}
