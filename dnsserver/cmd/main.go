@@ -33,7 +33,7 @@ func main() {
 }
 
 func getDockerClient() (*client.Client, func()) {
-	dockerClient, err := client.NewEnvClient()
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 
 	return dockerClient, func() {
 		err = dockerClient.Close()
