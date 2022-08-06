@@ -2,6 +2,8 @@
 # docker-dns
 > dns container for custom aliases
 
+![DOCKER-DNS](docker-dns.png)
+
 **Problem**
 * You maintain a lot of domains, steadily growing.
 * Your docker-compose.yaml already has way too many aliases for your LB.
@@ -19,13 +21,10 @@ Since it's an experiment there is not much config options.
 
 The rest should be obvious from docker-compose.yaml or the go code.
 
-
 ### Restrictions
-
 **Restrictions for the docker-compose setup:**
 * you need to attach your docker services via IP address to this DNS Service
 * so you need to define a docker network
-
 
 ### Tests
 Since this project was a just a quick try, there are no unit tests yet.

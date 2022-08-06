@@ -24,7 +24,7 @@ ci: # todo
 	echo "YOYO"
 
 functional-tests:
-	go run .test/main.go 
+	go run test/main.go
 	
 local-dev:
 	go mod edit -replace "github.com/Oppodelldog/dockertest@v0.0.3 = ../dockertest"
