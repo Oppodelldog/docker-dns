@@ -12,7 +12,7 @@ import (
 	"github.com/Oppodelldog/dockertest"
 )
 
-const goImage = "golang:1.14.4"
+const goImage = "golang:1.19.0"
 const imagePackagePath = "/go/pkg"
 const containerProjectRoot = "/go/src/github.com/Oppodelldog"
 const workingDir = "/go/src/github.com/Oppodelldog/docker-dns"
