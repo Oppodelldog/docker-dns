@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -112,7 +111,7 @@ func main() {
 }
 
 func checkResults() int {
-	content, err := ioutil.ReadFile(dnsTesterOutputFile)
+	content, err := os.ReadFile(dnsTesterOutputFile)
 	if err != nil {
 		panic(err)
 	}

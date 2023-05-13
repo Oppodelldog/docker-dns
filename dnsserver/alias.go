@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -76,7 +76,7 @@ func (l *AliasFileLoader) loadAliasesFromFile() {
 
 	logrus.Infof("Loading Alias file from '%s'", aliasFilePath)
 
-	content, err := ioutil.ReadFile(aliasFilePath)
+	content, err := os.ReadFile(aliasFilePath)
 	if err != nil {
 		logrus.Errorf("Could not load aliases: %v\n", err)
 

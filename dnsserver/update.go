@@ -118,7 +118,7 @@ func (u DNSUpdater) removeContainerFromDNS(e events.Message) {
 func (u DNSUpdater) getContainerName(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGettingContainerName, err)
+		return "", fmt.Errorf("%w: %w", ErrGettingContainerName, err)
 	}
 
 	return container.Names[0], nil
@@ -127,7 +127,7 @@ func (u DNSUpdater) getContainerName(containerID string) (string, error) {
 func (u DNSUpdater) getContainerIP(containerID string) (string, error) {
 	container, err := u.getContainerByID(containerID)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGettingContainerIP, err)
+		return "", fmt.Errorf("%w: %w", ErrGettingContainerIP, err)
 	}
 
 	ips := u.dockerClientAdapter.GetContainerNetworkIps(container)
@@ -147,7 +147,7 @@ func (u DNSUpdater) getContainerByID(containerID string) (types.Container, error
 
 	containers, err := u.dockerClient.ContainerList(ctx, options)
 	if err != nil {
-		return types.Container{}, fmt.Errorf("%w using container list: %v", ErrGettingContainerByID, err)
+		return types.Container{}, fmt.Errorf("%w using container list: %w", ErrGettingContainerByID, err)
 	}
 
 	if len(containers) == 0 {
