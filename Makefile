@@ -2,7 +2,7 @@ BUILD_FOLDER = ".build-artifacts"
 
 setup: ## Install tools
 	go install golang.org/x/tools/cmd/goimports
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
 
 lint: ## Run the linters
 	golangci-lint run
