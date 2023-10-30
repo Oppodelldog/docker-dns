@@ -1,6 +1,6 @@
 module github.com/Oppodelldog/docker-dns
 
-go 1.19
+go 1.21
 
 require (
 	github.com/Oppodelldog/dockertest v0.0.14
