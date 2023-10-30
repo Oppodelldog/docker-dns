@@ -27,6 +27,7 @@ func run() int {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() { _ = f.Close() }()
 
 	writeTestOutputf(f, "starting functional test")
