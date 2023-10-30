@@ -3,7 +3,7 @@ module github.com/Oppodelldog/docker-dns
 go 1.19
 
 require (
-	github.com/Oppodelldog/dockertest v0.0.12
+	github.com/Oppodelldog/dockertest v0.0.14
 	github.com/Oppodelldog/filediscovery v0.3.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/miekg/dns v1.1.50

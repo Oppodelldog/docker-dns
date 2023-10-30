@@ -4,6 +4,8 @@ github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VM
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Oppodelldog/dockertest v0.0.12 h1:VAbJtGY3ICXHiX7WgXXWHHHSr4YFIUxWKNasqxPrHYM=
 github.com/Oppodelldog/dockertest v0.0.12/go.mod h1:fq939/IWhCX7VmBrgyzPlGODtR7MZgWU9dayufLCUCw=
+github.com/Oppodelldog/dockertest v0.0.14 h1:OkCD1JNHdEHrW6l7NPHkCvyJvn51PqnfsZx1nj+P+y0=
+github.com/Oppodelldog/dockertest v0.0.14/go.mod h1:8RqVMWbXyDLxjRZjl8yxJqyhHSq6kmHQN3WAaOWokjY=
 github.com/Oppodelldog/filediscovery v0.3.0 h1:oYbASl7s5M5PauThblMgZpB/FVNJb85Z6megMDmWpOE=
 github.com/Oppodelldog/filediscovery v0.3.0/go.mod h1:W/ChJxck0x9Nj4RbASyM5my8dZXZNRtsHlC8cnssLH4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
