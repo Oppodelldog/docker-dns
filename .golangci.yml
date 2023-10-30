@@ -27,13 +27,10 @@ linters:
     - gocritic
     - bodyclose
     - prealloc
-    - structcheck
     - wsl
     - tagliatelle
     - makezero
     - paralleltest
-    - deadcode
     - unparam
     - unused
-    - varcheck
   fast: false
