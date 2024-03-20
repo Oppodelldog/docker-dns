@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Oppodelldog/dockertest v0.0.14
 	github.com/Oppodelldog/filediscovery v0.3.0
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v24.0.9+incompatible
 	github.com/miekg/dns v1.1.56
 	github.com/sirupsen/logrus v1.9.3
 )
